@@ -16,7 +16,7 @@
  * ## 为什么缺 CLI 要单独给话
  *
  * 分组是按 CLI 是否在 PATH 上自动启用的（见 registry.ts），所以正常情况下
- * 缺 CLI 的分组根本不会注册。但显式 `MUSEAV_MCP_GROUPS=<id>` 强开、
+ * 缺 CLI 的分组根本不会注册。但显式 `CS_MCP_GROUPS=<id>` 强开、
  * 或装好之后路径变了，仍会走到这里 —— 这时要给「装什么」，不是给 ENOENT。
  */
 import { execFile } from "node:child_process";

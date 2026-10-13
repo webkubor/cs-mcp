@@ -1,31 +1,39 @@
 // 简单 MCP 协议测试客户端：spawn server，写入 initialize/tools/list，读取响应
 //
-// 断言两件事，都是「人不会记得」的那种：
+// 断言的都是「人不会记得」的那类事：
 //
-// ① **老工具一个都不能少。** museav-mcp 已经发到 2.x、有真实下载量，
-//    工具名是它对用户的契约。分组化重构最容易出的事故就是某个工具
-//    在搬家时掉了 —— 而掉了不会报错，只会让 agent 找不到那个工具。
-//    所以下面把 21 个名字逐个钉死（只增不减，删工具是破坏性变更，得走大版本）。
+// ① **每个工具名都必须以它所属分组的 id 开头**（`museav_*` / `vlm_*` / …），
+//    唯一的例外是 `groups_list`。这条是 3.0.0 立下的命名规范 —— 加一组新能力时，
+//    名字对不上会在 CI 就红，而不是等 agent 在工具列表里挑花眼。
+//    前缀集合直接从 registry 的 GROUPS 推导，新增分组不用改这个文件。
 //
 // ② **工具总数与 README 一致。** 加了工具忘了改文档，在 CI 里变红，而不是等人发现。
 //
-// 用 MUSEAV_MCP_GROUPS=all 起 server：CI 机器上什么 CLI 都没装，
+// ③ **3.0.0 的旧变量名仍然生效。** 改名那次的真实失效模式不是报错，是**静默回落**
+//    （见 src/env.ts）：变量被忽略 → 开关值空 → 悄悄退回「装了 CLI 才启用」，
+//    连告警都不触发。所以兼容路径必须被测，不能靠人记得。
+//
+// 用 CS_MCP_GROUPS=all 起 server：CI 机器上什么 CLI 都没装，
 // 走默认的探测策略会一个分组都不启用，那就测不到工具集本身了。
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
-const EXPECTED_TOOL_COUNT = 43;   // 2026-10-02 分组化：museav 17 + vlm 4 + contrast 3 + facet 2 + reel 3 + browser 13 + groups_list
+const EXPECTED_TOOL_COUNT = 43;   // museav 17 + vlm 4 + contrast 3 + facet 2 + reel 3 + browser 13 + groups_list
 
-// 分组化之前就存在的 21 个工具 —— 这些名字是老用户的契约，不许消失
-const LEGACY_TOOLS = [
+// 3.0.0 之前的 17 个无前缀 museav 工具名。这些名字**不是**老用户的契约了 ——
+// museav-mcp 已于 2026-10-05 从 npm 撤下、从未面向外部发布过，没有下游要保护。
+// 留着这份名单只为把「老名字不许复活」钉死：它们一复活，就说明有人从旧
+// 文件/旧分支搬代码过来只搬了一半前缀。
+const UNPREFIXED_MUSEAV = [
   "gen_background", "remove_bg", "upscale_image", "remove_watermark", "compress_image",
   "list_templates", "list_skills", "list_jobs", "upload_asset", "image_to_template",
   "reverse", "list_models", "balance", "list_video_templates",
-  "vlm_describe", "vlm_ask", "vlm_cover_check", "vlm_reverse_prompt",
   "skillhub_tags", "skillhub_whoami", "skillhub_publish",
 ];
+
+const META_TOOL = "groups_list";   // 发现面，不属于任何分组，唯一无前缀的例外
 
 // 版本守卫的语义比较必须按数字逐段比。字符串比的话 "3.10.0" < "3.6.0"，
 // 真出到 3.10 时会把新版本判成过旧、把所有工具锁死 —— 而那时离现在还很远，
@@ -109,60 +117,141 @@ const LEGACY_TOOLS = [
   console.log(`GROUP_OK ${GROUPS.length} 组；白名单/排除/拼错三条都通过`);
 }
 
-const child = spawn("node", ["dist/index.js"], {
-  cwd: dirname(fileURLToPath(import.meta.url)),
-  env: { ...process.env, MUSEAV_MCP_GROUPS: "all" },
-  stdio: ["pipe", "pipe", "inherit"],
-});
-
-const rl = createInterface({ input: child.stdout });
-let id = 0;
-const send = (method, params, extraId = null) => {
-  const msg = { jsonrpc: "2.0", id: extraId ?? ++id, method, params };
-  child.stdin.write(JSON.stringify(msg) + "\n");
-};
-
-rl.on("line", (line) => {
-  try {
-    const msg = JSON.parse(line);
-    if (msg.result && msg.result.tools) {
-      const names = msg.result.tools.map((t) => t.name);
-      console.log("TOOLS_LIST_OK count =", names.length);
-      for (const n of names) console.log("  -", n);
-
-      const missing = LEGACY_TOOLS.filter((t) => !names.includes(t));
-      if (missing.length > 0) {
-        console.error(
-          `LEGACY_TOOLS_MISSING 老工具在分组化里掉了 ${missing.length} 个：${missing.join(", ")} —— ` +
-          `这些名字是已发布版本的契约，老用户的 agent 正靠它们干活`,
-        );
-        process.exit(1);
-      }
-      console.log(`LEGACY_OK ${LEGACY_TOOLS.length} 个老工具全部还在`);
-
-      if (names.length !== EXPECTED_TOOL_COUNT) {
-        console.error(
-          `TOOLS_LIST_MISMATCH 期望 ${EXPECTED_TOOL_COUNT} 个，实际 ${names.length} 个 —— ` +
-          `改了工具就同步改这个常量，以及 README 里写的数字`,
-        );
-        process.exit(1);
-      }
-      process.exit(0);
+// 改名那天的兼容路径：新名优先、旧名兜底、都设且不同时新名赢且标出冲突。
+// 纯函数，直接喂假 env —— 不必真 spawn 两个 server 才知道结果。
+{
+  const { resolveGroupsSpec, GROUPS_ENV, GROUPS_ENV_LEGACY } = await import("./dist/env.js");
+  const cases = [
+    [{ [GROUPS_ENV]: "all" }, { spec: "all", source: "current", conflict: false }, "只用新名"],
+    [{ [GROUPS_ENV_LEGACY]: "all" }, { spec: "all", source: "legacy", conflict: false }, "只用旧名要兜底"],
+    [{ [GROUPS_ENV]: "facet", [GROUPS_ENV_LEGACY]: "all" },
+      { spec: "facet", source: "current", conflict: true }, "冲突时新名赢且要报"],
+    [{ [GROUPS_ENV]: "all", [GROUPS_ENV_LEGACY]: "all" },
+      { spec: "all", source: "current", conflict: false }, "两个都是 all 不算冲突"],
+    [{}, { spec: undefined, source: "default", conflict: false }, "都没设走探测式默认"],
+    [{ [GROUPS_ENV]: "", [GROUPS_ENV_LEGACY]: "all" },
+      { spec: "", source: "current", conflict: true }, "新名置空是显式回默认，算冲突"],
+  ];
+  for (const [env, want, why] of cases) {
+    const got = resolveGroupsSpec(env);
+    const ok = got.spec === want.spec && got.source === want.source && got.conflict === want.conflict;
+    if (!ok) {
+      console.error(`ENV_FAIL ${why}：期望 ${JSON.stringify(want)}，实际 ${JSON.stringify(got)}`);
+      process.exit(1);
     }
-  } catch {}
-});
+  }
+  console.log(`ENV_OK ${GROUPS_ENV} / 旧名兜底 / 冲突取舍 ${cases.length} 条`);
+}
 
-// initialize
-send("initialize", {
-  protocolVersion: "2024-11-05",
-  capabilities: {},
-  clientInfo: { name: "test-client", version: "1.0" },
-});
-setTimeout(() => {
-  send("notifications/initialized", {});
-}, 300);
-setTimeout(() => {
-  send("tools/list", {});
-}, 600);
-// safety exit
-setTimeout(() => { console.error("TIMEOUT"); process.exit(1); }, 8000);
+// 起一个 server，跑一轮 initialize + tools/list。
+function listTools(env) {
+  return new Promise((resolve, reject) => {
+    const child = spawn("node", ["dist/index.js"], {
+      cwd: dirname(fileURLToPath(import.meta.url)),
+      env,
+      stdio: ["pipe", "pipe", "inherit"],
+    });
+    const rl = createInterface({ input: child.stdout });
+    const bail = setTimeout(() => {
+      child.kill();
+      reject(new Error("tools/list 超时"));
+    }, 8000);
+    rl.on("line", (line) => {
+      let msg;
+      try { msg = JSON.parse(line); } catch { return; }
+      if (!msg.result || !msg.result.tools) return;
+      clearTimeout(bail);
+      const names = msg.result.tools.map((t) => t.name);
+      child.kill();
+      rl.close();
+      resolve(names);
+    });
+    const send = (method, params) =>
+      child.stdin.write(JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }) + "\n");
+    send("initialize", {
+      protocolVersion: "2024-11-05",
+      capabilities: {},
+      clientInfo: { name: "test-client", version: "1.0" },
+    });
+    setTimeout(() => send("notifications/initialized", {}), 300);
+    setTimeout(() => send("tools/list", {}), 600);
+  });
+}
+
+/** 造一份干净 env：只留指定的那一个开关变量，避免继承到宿主机的设置造成假绿/假红。 */
+function envWith(vars) {
+  const env = { ...process.env };
+  for (const k of Object.keys(env)) {
+    if (k === "CS_MCP_GROUPS" || k === "MUSEAV_MCP_GROUPS") delete env[k];
+  }
+  return { ...env, ...vars };
+}
+
+const { GROUPS } = await import("./dist/registry.js");
+const prefixRe = new RegExp(`^(${GROUPS.map((g) => g.id).join("|")})_`);
+
+const names = await listTools(envWith({ CS_MCP_GROUPS: "all" }));
+console.log("TOOLS_LIST_OK count =", names.length);
+for (const n of names) console.log("  -", n);
+
+if (names.length !== EXPECTED_TOOL_COUNT) {
+  console.error(
+    `TOOLS_LIST_MISMATCH 期望 ${EXPECTED_TOOL_COUNT} 个，实际 ${names.length} 个 —— ` +
+    `改了工具就同步改这个常量，以及 README 里写的数字`,
+  );
+  process.exit(1);
+}
+
+if (!names.includes(META_TOOL)) {
+  console.error(`TOOLS_LIST_MISSING ${META_TOOL} 不见了 —— 它是唯一的发现面，永远注册`);
+  process.exit(1);
+}
+
+// ① 命名规范：除 groups_list 外，每个工具名都得落在某个分组前缀下。
+const unprefixed = names.filter((n) => n !== META_TOOL && !prefixRe.test(n));
+if (unprefixed.length > 0) {
+  console.error(
+    `TOOL_NAME_FAIL ${unprefixed.length} 个工具名没带分组前缀：${unprefixed.join(", ")} —— ` +
+    `约定是 <分组id>_<动作>，前缀取自 registry 的 GROUPS（${GROUPS.map((g) => g.id).join("/")}）`,
+  );
+  process.exit(1);
+}
+console.log(`NAME_OK ${names.length - 1} 个工具全部以所属分组 id 开头（${META_TOOL} 除外）`);
+
+// 3.0.0 之前那 17 个无前缀名字不许复活
+const revived = UNPREFIXED_MUSEAV.filter((t) => names.includes(t));
+if (revived.length > 0) {
+  console.error(
+    `UNPREFIXED_REVIVED 无前缀的旧工具名回来了 ${revived.length} 个：${revived.join(", ")} —— ` +
+    `3.0.0 起它们统一叫 museav_*；旧名没下游契约保护（包已 unpublish），留着只会让 agent 挑到两个同名入口`,
+  );
+  process.exit(1);
+}
+console.log(`UNPREFIXED_OK ${UNPREFIXED_MUSEAV.length} 个旧名均未复活`);
+
+// 每个分组都得真的长出工具来（分组注册函数忘了调、或工具名前缀写错分组，都会被这条抓住）
+for (const g of GROUPS) {
+  const n = names.filter((x) => x.startsWith(`${g.id}_`)).length;
+  if (n === 0) {
+    console.error(`GROUP_EMPTY ${g.id} 一个工具都没长出来 —— 检查它 register() 与工具名前缀`);
+    process.exit(1);
+  }
+}
+
+// ③ 旧变量名仍生效：同一份工具集，一个工具都不能少。
+// 这是改名那步唯一会「静默降级」而不报错的地方，所以真起一次 server 验。
+const legacyNames = await listTools(envWith({ MUSEAV_MCP_GROUPS: "all" }));
+const lostViaLegacy = names.filter((n) => !legacyNames.includes(n));
+if (lostViaLegacy.length > 0 || legacyNames.length !== names.length) {
+  console.error(
+    `LEGACY_ENV_MISMATCH 用旧名 MUSEAV_MCP_GROUPS=all 起，工具集变了：` +
+    `少了 ${lostViaLegacy.length} 个（${lostViaLegacy.slice(0, 5).join(", ")}…），` +
+    `数量 ${names.length} → ${legacyNames.length}。旧名必须与新名等价 —— ` +
+    `否则设了旧变量的人会静默退回探测式，连告警都没有`,
+  );
+  process.exit(1);
+}
+console.log(`LEGACY_ENV_OK 旧变量名起出同一份 ${legacyNames.length} 个工具`);
+
+console.log("ALL_OK");
+process.exit(0);

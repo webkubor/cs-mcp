@@ -6,9 +6,17 @@
  *
  * 平台类工具需 `museav login`（个人 JWT，7 天）；本地后期那四个离线可用。
  *
- * ⚠️ 下面的工具体是从 src/index.ts **原样搬过来**的，除 runner 来源外一个字没改 ——
- * 它们每一条都对应一次线上踩坑（双路输出、截断留痕、dry-run 默认值…），
- * 改之前先读注释里的原因。
+ * ## 这组是**云能力**，全仓唯一一组
+ *
+ * 其余五组（vlm / contrast / facet / reel / browser）都是离线确定性计算。
+ * 只有这组要登录、要网络、有余额配额、会花钱。owner 的口径「cs 是核心，
+ * museav 是云能力」落到工具面上就是这条 `museav_` 前缀 —— 拿到工具列表的
+ * agent 一眼能分出哪 17 个会把请求发到别人的服务器上。
+ *
+ * ⚠️ 3.0.0 起工具名统一加了 `museav_` 前缀（此前是全仓唯一的例外组）。
+ * **动作词一个字没改**，只补前缀；每个工具的实现与注释都是从老单文件
+ * 原样搬过来的，每一条都对应一次线上踩坑（双路输出、截断留痕、
+ * dry-run 默认值…），改之前先读注释里的原因。
  */
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
@@ -17,7 +25,7 @@ import { createRunner } from "../cli.js";
 import { MUSEAV_CLI } from "../clis.js";
 import type { CapabilityGroup } from "../registry.js";
 
-// 名字保持 runMuseav —— 搬过来的工具体因此一个字都不用改
+// runner 名字保持 runMuseav —— 它本来就叫 museav-cli，加前缀的是**工具名**不是 CLI
 const runMuseav = createRunner(MUSEAV_CLI);
 
 const LIST_LIMIT = 8000;
@@ -37,7 +45,7 @@ async function skillhubLoggedIn(): Promise<boolean> {
 export function registerMuseav(server: McpServer): number {
 // ---------- 工具 1：出背景图 / 出图 ----------
 server.tool(
-  "gen_background",
+  "museav_gen_background",
   "用 MUSE AV 出图中台生成壁纸背景图/一般出图/出视频（在线，需登录）。" +
     "选模板或技能前先用 list_templates / list_skills 查真实清单，不要硬编码 slug。",
   {
@@ -85,7 +93,7 @@ server.tool(
 
 // ---------- 工具 2：抠图去背景 ----------
 server.tool(
-  "remove_bg",
+  "museav_remove_bg",
   "本地抠图去背景（BiRefNet/ISNet/U2Net，免登录），输出带 alpha 的 PNG",
   {
     file: z.string().describe("输入图片绝对路径"),
@@ -107,7 +115,7 @@ server.tool(
 
 // ---------- 工具 3：超分放大 ----------
 server.tool(
-  "upscale_image",
+  "museav_upscale_image",
   "本地超分放大（Real-ESRGAN + Vulkan GPU，免登录），默认 4x 输出 PNG",
   {
     file: z.string().describe("输入图片绝对路径"),
@@ -131,7 +139,7 @@ server.tool(
 
 // ---------- 工具 4：去水印 ----------
 server.tool(
-  "remove_watermark",
+  "museav_remove_watermark",
   "本地去水印（LaMa 修复，免登录），自动定位，复杂画面可用 mask 指定",
   {
     file: z.string().describe("输入图片绝对路径"),
@@ -153,7 +161,7 @@ server.tool(
 
 // ---------- 工具 5：压缩 ----------
 server.tool(
-  "compress_image",
+  "museav_compress_image",
   "本地压缩图片（sharp，免登录），默认同目录 <名>-min.<格式>",
   {
     file: z.string().describe("输入图片绝对路径"),
@@ -187,7 +195,7 @@ server.tool(
 const LIST_LIMIT = 8000;
 
 server.tool(
-  "list_templates",
+  "museav_list_templates",
   "查可用的图片/文字模板（自己租户建的 + 平台共享的）。gen_background 的 template 参数要从这里取，" +
     "不要硬编码；清单很长时先用 category 收窄。模板自带哪些占位符看「字段:」那一列，取值用 fields 传。",
   {
@@ -207,7 +215,7 @@ server.tool(
 );
 
 server.tool(
-  "list_skills",
+  "museav_list_skills",
   "查可用技能（自己的私有技能 + 租户专属 + 公共技能库）。gen_background 的 skill 参数从这里取 slug，" +
     "不要硬编码；清单很长时先用 genre 收窄。最后一列标了是否需垫图。",
   {
@@ -222,7 +230,7 @@ server.tool(
 );
 
 server.tool(
-  "list_jobs",
+  "museav_list_jobs",
   "查自己名下的出图工作流（个人 login 看自己的，租户 apiKey 看业务下全部）。" +
     "gen 失败、或要回头找出图结果 URL 时用它；服务端固定只返回最近 50 条。",
   {
@@ -241,7 +249,7 @@ server.tool(
 );
 
 server.tool(
-  "upload_asset",
+  "museav_upload_asset",
   "上传素材（图片/音频/视频，按字节内容判类型）拿公网直链。gen_background 的垫图要的是 URL 时走它；" +
     "本地文件直接传 ref 路径也行，不用先上传。",
   {
@@ -260,7 +268,7 @@ server.tool(
 );
 
 server.tool(
-  "image_to_template",
+  "museav_image_to_template",
   "图生模板：上传图或传图片 URL → 读图 + 文字层逆向 + 变量化 → 建成可复用图片模板（原图自动焊成参考图）。" +
     "默认真建模板；只想看草稿、不想往模板库落东西时带 dryRun=true。",
   {
@@ -295,7 +303,7 @@ server.tool(
 // （中台、需登录），喂给 gen_background 更顺手。按用户的「图像识别优先 mlx-vlm-kit」原则，
 // 调本工具前先看 vlm_reverse_prompt 是否够用；只有当 SCULPT 格式或平台侧约束被显式要求时才走这里。
 server.tool(
-  "reverse",
+  "museav_reverse",
   "读图反推 SCULPT prompt（中台 API，stdout 输出英文 prompt；stderr 是结构化中文报告）。" +
     "图像识别默认优先用本地的 vlm_describe / vlm_reverse_prompt（mlx-vlm-kit，免登录零成本）；" +
     "本工具给出平台专用 SCULPT 格式，喂给 gen_background 更顺手。",
@@ -317,7 +325,7 @@ server.tool(
 
 // models / balance / video-templates：CLI 3.4.0 新增的运营/清单类工具
 server.tool(
-  "list_models",
+  "museav_list_models",
   "查可用模型（CLI 3.4.0+）。--video=true 查视频档次（如 Seedance 2.x 对外名），可直接喂给 " +
     "gen_background 的 video=true + model 参数；不传则查图片模型。清单来自中台，CLI 不硬编码。",
   {
@@ -333,7 +341,7 @@ server.tool(
 );
 
 server.tool(
-  "balance",
+  "museav_balance",
   "查上游余额（平台账户视角，看自己的余额）。",
   {},
   async () => {
@@ -345,7 +353,7 @@ server.tool(
 );
 
 server.tool(
-  "list_video_templates",
+  "museav_list_video_templates",
   "查可用视频模板（自己租户建的 + 平台共享的，与图片模板是两套表）。" +
     "gen_background 的 video=true + template 组合从这里取 id，不要硬编码。",
   {
@@ -383,7 +391,7 @@ async function skillhubLoggedIn(): Promise<boolean> {
 }
 
 server.tool(
-  "skillhub_tags",
+  "museav_skillhub_tags",
   "查小红书 SkillHub 的内容标签（发布必须带 tag，清单实时拉取，不要硬编码）",
   {},
   async () => {
@@ -393,7 +401,7 @@ server.tool(
 );
 
 server.tool(
-  "skillhub_whoami",
+  "museav_skillhub_whoami",
   "查小红书 SkillHub 登录态（脱敏）。真提交前先查这个，未登录要让用户在终端跑 museav skillhub login 扫码",
   {},
   async () => {
@@ -403,7 +411,7 @@ server.tool(
 );
 
 server.tool(
-  "skillhub_publish",
+  "museav_skillhub_publish",
   "发布本地 Skill 到小红书 SkillHub。**默认 dry-run**（只本地打包校验、不上传不提交），" +
     "把待提交内容返回给用户核对；只有用户明确说「提交/确认/submit」时才带 submit=true 真提交。" +
     "提交不可逆：Skill ID 是平台主键，跨版本不可改名。" +

@@ -91,5 +91,5 @@ jobs:
           curl -s -X POST "https://manager.museav.top/api/cli-release" \
             -H "Authorization: Bearer $CLI_RELEASE_TOKEN" \
             -H "Content-Type: application/json" \
-            -d "$(jq -n --arg p museav-mcp --arg v "$VERSION" --arg c "$BODY" '{package: $p, version: $v, changes: $c}')" \
+            -d "$(jq -n --arg p cs-mcp --arg v "$VERSION" --arg c "$BODY" '{package: $p, version: $v, changes: $c}')" \
             || echo "回调业务中台失败(忽略，不影响发布)"

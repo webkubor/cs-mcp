@@ -18,7 +18,7 @@
  * 「他机器上根本没装的那些工具」付 token。
  *
  * 所以默认策略是**探测式**：CLI 在 PATH 上才启用那个分组。
- * 想强开/关掉，用环境变量 MUSEAV_MCP_GROUPS（见 selectGroups）。
+ * 想强开/关掉，用环境变量 CS_MCP_GROUPS（见 selectGroups）。
  */
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CliSpec } from "./cli.js";
@@ -31,7 +31,7 @@ import { reelGroup } from "./groups/reel.js";
 import { browserGroup } from "./groups/browser.js";
 
 export interface CapabilityGroup {
-  /** 分组 id，也是 MUSEAV_MCP_GROUPS 里的开关名 */
+  /** 分组 id，也是 CS_MCP_GROUPS 里的开关名、工具名的前缀 */
   id: string;
   /** 中文名，给人看 */
   title: string;
@@ -57,7 +57,16 @@ export const GROUPS: CapabilityGroup[] = [
   browserGroup,
 ];
 
-export const GROUPS_ENV = "MUSEAV_MCP_GROUPS";
+// 环境变量名与开关解析住在 env.ts（叶子模块），不在这里 —— browser.ts 也
+// 要读 BROWSER_AGENT_ENV，而 registry.ts 已经 import 了 browser.ts，
+// 运行时值放在这儿会构成环。这里转出去，调用方一处 import 就够。
+import { GROUPS_ENV, GROUPS_ENV_LEGACY, type GroupsSpec } from "./env.js";
+export {
+  GROUPS_ENV,
+  GROUPS_ENV_LEGACY,
+  resolveGroupsSpec,
+  type GroupsSpec,
+} from "./env.js";
 
 export interface SkippedGroup {
   group: CapabilityGroup;
@@ -74,7 +83,7 @@ export interface Selection {
 }
 
 /**
- * 解析 MUSEAV_MCP_GROUPS 并选出要启用的分组。
+ * 解析分组开关值并选出要启用的分组。
  *
  * 语法（逗号分隔）：
  *   all                 全开（不探测 CLI，缺 CLI 的调用时才报装什么）
@@ -82,7 +91,8 @@ export interface Selection {
  *   -museav             默认集里去掉这几个
  *   facet,-vlm          白名单 + 排除，可混用
  *
- * 不设这个变量 = 默认策略：**CLI 在 PATH 上才启用**。
+ * 不设开关 = 默认策略：**CLI 在 PATH 上才启用**。
+ * 传值来源见 resolveGroupsSpec（新名 CS_MCP_GROUPS，旧名仍兼容）。
  */
 export function selectGroups(spec: string | undefined, groups: CapabilityGroup[] = GROUPS): Selection {
   const raw = (spec ?? "").trim();
@@ -127,7 +137,17 @@ export function selectGroups(spec: string | undefined, groups: CapabilityGroup[]
  * 存在的理由：默认策略下没装 CLI 的分组是「隐身」的，agent 无从知道
  * 这个 MCP 还能干什么、该让用户装什么。这一个工具就是那张地图。
  */
-export function registerGroupsMeta(server: McpServer, selection: Selection, toolCounts: Map<string, number>): void {
+export function registerGroupsMeta(
+  server: McpServer,
+  selection: Selection,
+  toolCounts: Map<string, number>,
+  spec?: GroupsSpec,
+): void {
+  // 开关值是从哪个变量名读来的 —— 读出来时别让人以为一定是新名。
+  // 迁移期两个名都有人设，而「当前生效的是哪个」是排查静默降级的第一现场。
+  const envName =
+    spec?.source === "legacy" ? GROUPS_ENV_LEGACY : GROUPS_ENV;
+
   server.tool(
     "groups_list",
     "列出这个 MCP 的全部能力分组：哪些已启用（各几个工具）、哪些因为没装 CLI 而没启用、" +
@@ -138,8 +158,13 @@ export function registerGroupsMeta(server: McpServer, selection: Selection, tool
       lines.push("# 能力分组（CS 系统的 MCP —— owner 个人工具链的串联层）");
       lines.push("");
       lines.push(`开关：环境变量 ${GROUPS_ENV}（逗号分隔 id；支持 -id 排除；all 全开）`);
+      if (spec?.source === "legacy") {
+        lines.push(`⚠️ 当前生效的值读自**旧变量名** ${GROUPS_ENV_LEGACY}，请迁到 ${GROUPS_ENV}（旧名仍兼容）`);
+      } else if (spec?.conflict) {
+        lines.push(`⚠️ ${GROUPS_ENV} 与 ${GROUPS_ENV_LEGACY} 都设了且值不同 —— 以 ${GROUPS_ENV} 为准`);
+      }
       lines.push(`当前：启用 ${selection.enabled.length} 组 / 共 ${GROUPS.length} 组` +
-        (selection.byDefault ? "（默认策略：装了 CLI 才启用）" : `（按 ${GROUPS_ENV} 指定）`));
+        (selection.byDefault ? "（默认策略：装了 CLI 才启用）" : `（按 ${envName} 指定）`));
       lines.push("");
 
       for (const g of GROUPS) {

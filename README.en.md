@@ -1,4 +1,4 @@
-<h1 align="center">🧭 museav-mcp</h1>
+<h1 align="center">🧭 cs-mcp</h1>
 
 <p align="center">
   <strong>The MCP server of CortexOS (the CS system) — one command that wires a personal toolchain into any AI agent.</strong><br>
@@ -7,8 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/museav-mcp"><img src="https://img.shields.io/npm/v/museav-mcp?style=for-the-badge&color=3fb950&logo=npm&label=npm" alt="npm" /></a>
-  <a href="https://www.npmjs.com/package/museav-mcp"><img src="https://img.shields.io/npm/dm/museav-mcp?style=for-the-badge&color=6d7f9c&label=downloads" alt="downloads" /></a>
+  <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/v/cs-mcp?style=for-the-badge&color=3fb950&logo=npm&label=npm" alt="npm" /></a>
+  <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/dm/cs-mcp?style=for-the-badge&color=6d7f9c&label=downloads" alt="downloads" /></a>
   <img src="https://img.shields.io/badge/tools-43-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-2-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
@@ -21,9 +21,29 @@
 
 ---
 
+## ⚠️ Not to be confused with `cs mcp serve`
+
+There are **two** things called "the cs MCP". They complement each other; wiring up the wrong one gets you
+a pile of tools you didn't ask for:
+
+| | `cs mcp serve` (built into CortexOS) | **This repo, cs-mcp** |
+|---|---|---|
+| Form | Go, a `cs` subcommand | TypeScript, standalone npm package |
+| Server name | `cortexos` | `cs` |
+| Covers | **System context**: rules / skills / knowledge search / CLI ledger / agent context | **Toolchain multiplexing**: the CLI capabilities of open-source projects |
+| Source of truth | `cli-registry.json` + `docs/rules` + `skills` | each project's own CLI |
+| Size | 11 read-only discovery tools | 43 tools across 6 capability groups |
+
+One line: **"what rules and skills does the cs system have" → `cs mcp serve`; "generate an image, typeset
+Markdown to PDF, drive a real browser" → cs-mcp.**
+
+> For the record: **agents generally don't need MCP at all.** Anything that can run Bash should just call
+> the `cs` CLI — that's the main road, and it reaches remote machines where an MCP over stdio cannot.
+> MCP's value is confined to clients that **can't run Bash**.
+
 ## 🎯 Why This
 
-| Need | Hand-rolled commands | SDK per tool | museav-mcp |
+| Need | Hand-rolled commands | SDK per tool | cs-mcp |
 |---|:---:|:---:|:---:|
 | Generation, vision, gating and typesetting in one agent | ❌ Four dialects | ❌ Wire the protocol four times | ✅ One server covers all |
 | Survives switching agents | ❌ Tied to one CLI | ⚠️ Every vendor differs | ✅ Anything that speaks MCP |
@@ -40,34 +60,60 @@ returned as paths — no base64.
 
 ## 🧩 Capability groups (this is the map)
 
-| Group | Open-source project | Tools | What it does | Requires |
-|---|---|:---:|---|---|
-| `museav` | [museav-cli](https://github.com/webkubor/museav-cli) | 17 | Image / video generation, local post-processing (matting, upscaling, watermark removal, compression), template & skill listings, asset upload, image→template, SCULPT prompt reversal, SkillHub publishing | `museav-cli` ≥ 3.9.0 |
-| `vlm` | [mlx-vlm-kit](https://github.com/webkubor/mlx-vlm-kit) | 4 | Local offline vision: describe, ask, cover-check, reverse-prompt | `vlm` (Apple Silicon) |
-| `contrast` | [contrast-guard](https://github.com/webkubor/contrast-guard) | 3 | Contrast gating: static colour-pair check, rendered measurement, baselines | `contrast-guard` |
-| `facet` | [@webkubor/facet](https://github.com/webkubor/facet) | 2 | Typeset Markdown into PDF / long image / slide deck | `facet` |
-| `reel` | [@kubor/reel-kit](https://github.com/webkubor/reel-kit) | 3 | Assets + per-line copy → vertical video (templates / transitions / BGM / optional voice-over) | `reel` + **ffmpeg** |
-| `browser` | [lite-browser](https://github.com/webkubor/lite-browser) | 13 | Real Chrome: open / snapshot / click / type / screenshot / JS eval + a **human hand-off protocol** + multi-agent session isolation | `lite-browser` |
-| — | built into this MCP | 1 | `groups_list`: every group, what to install, why one is off | none |
+| Group | Tier | Open-source project | Tools | What it does | Requires |
+|---|---|:---:|---:|---|---|
+| `museav` | **cloud** | [museav-cli](https://github.com/webkubor/museav-cli) | 17 | Image / video generation, local post-processing (matting, upscaling, watermark removal, compression), template & skill listings, asset upload, image→template, SCULPT prompt reversal, SkillHub publishing | `museav-cli` ≥ 3.9.0 |
+| `vlm` | local | [mlx-vlm-kit](https://github.com/webkubor/mlx-vlm-kit) | 4 | Local offline vision: describe, ask, cover-check, reverse-prompt | `vlm` (Apple Silicon) |
+| `contrast` | local | [contrast-guard](https://github.com/webkubor/contrast-guard) | 3 | Contrast gating: static colour-pair check, rendered measurement, baselines | `contrast-guard` |
+| `facet` | local | [@webkubor/facet](https://github.com/webkubor/facet) | 2 | Typeset Markdown into PDF / long image / slide deck | `facet` |
+| `reel` | local | [@kubor/reel-kit](https://github.com/webkubor/reel-kit) | 3 | Assets + per-line copy → vertical video (templates / transitions / BGM / optional voice-over) | `reel` + **ffmpeg** |
+| `browser` | local | [lite-browser](https://github.com/webkubor/lite-browser) | 13 | Real Chrome: open / snapshot / click / type / screenshot / JS eval + a **human hand-off protocol** + multi-agent session isolation | `lite-browser` |
+| — | built in | this MCP | 1 | `groups_list`: every group, what to install, why one is off | none |
+
+Exactly one of the six is a **cloud** group: `museav` needs a login, a network, a balance and money.
+The other five are offline, deterministic computation. That split is readable straight off the tool names —
+**all 17 cloud tools carry the `museav_` prefix.**
 
 **The default strategy is probing**: a group's tools are registered only if its CLI is on `PATH`.
 Tool schemas ship with *every* model request, and an aggregator only grows — users shouldn't pay tokens
 for tools they never installed. Nothing disappears silently: `groups_list` is always available and tells
 the agent what this MCP can do and what to install.
 
-Force or trim groups with `MUSEAV_MCP_GROUPS`:
+Force or trim groups with `CS_MCP_GROUPS`:
 
 ```bash
-MUSEAV_MCP_GROUPS=all              # register everything (missing CLIs error only when called)
-MUSEAV_MCP_GROUPS=facet,contrast   # only these
-MUSEAV_MCP_GROUPS=-museav          # default set minus these
+CS_MCP_GROUPS=all              # register everything (missing CLIs error only when called)
+CS_MCP_GROUPS=facet,contrast   # only these
+CS_MCP_GROUPS=-museav          # default set minus these
 ```
+
+> The pre-3.0.0 name `MUSEAV_MCP_GROUPS` **still works** (new name wins; if both are set to different
+> values the new one wins and a warning goes to stderr). It has to stay: ignoring the old variable
+> **doesn't error** — it silently falls back to probing, so anyone who had written `all` just loses those
+> forced-on groups with no signal at all.
 
 ## ⚡ Quickstart
 
+> ⚠️ **3.0.0 is not on npm yet** (both `cs-mcp` — unpublished 2025-04-25 — and `museav-mcp` — unpublished
+> 2026-10-05 — are currently free names but not live packages). Until it is published, use the
+> "from a local clone" path below; `npx -y cs-mcp` only becomes true once 3.0.0 ships.
+
 ```bash
 npm i -g museav-cli                    # install whichever CLI you want a group for
-claude mcp add museav -- npx -y museav-mcp
+```
+
+Once published:
+
+```bash
+claude mcp add cs -- npx -y cs-mcp
+```
+
+Working today (from a local clone):
+
+```bash
+git clone https://github.com/webkubor/cs-mcp && cd cs-mcp
+pnpm install && pnpm build
+claude mcp add cs -- node "$PWD/dist/index.js"
 ```
 
 ## Tools (43)
@@ -76,23 +122,23 @@ claude mcp add museav -- npx -y museav-mcp
 
 | Tool | What it does | Login required |
 |---|---|---|
-| `gen_background` | Generate backgrounds / images / video (via the backend) | ✅ yes |
-| `remove_bg` | Background removal (BiRefNet / ISNet / U2Net), outputs alpha PNG | no, runs locally |
-| `upscale_image` | Super-resolution (Real-ESRGAN + Vulkan GPU), 4x by default | no, runs locally |
-| `remove_watermark` | Watermark removal (LaMa inpainting), auto-detects, accepts a manual mask | no, runs locally |
-| `compress_image` | Compress (sharp); max edge / quality / format configurable | no, runs locally |
-| `list_templates` | List available image / text templates (prefer these over hardcoding a `template`) | ✅ yes |
-| `list_skills` | List available skills (prefer these over hardcoding a `skill` slug) | ✅ yes |
-| `list_video_templates` | List video templates (sibling to `list_templates`; pairs with `gen_background`'s `video=true` + `template`) | ✅ yes |
-| `list_models` | List models; `video=true` lists video tiers (feed straight into `gen_background`'s `model`) | ✅ yes |
-| `balance` | Check upstream balance | ✅ yes |
-| `list_jobs` | List your generation jobs (result URLs, failure reasons) | ✅ yes |
-| `upload_asset` | Upload an asset and get a public direct link (use when a reference image needs a URL) | ✅ yes |
-| `image_to_template` | Image → template: read the image, invert text layers, parameterize | ✅ yes |
-| `reverse` | Reverse a SCULPT prompt from an image (backend API). **Complements** `vlm_reverse_prompt` | ✅ yes |
-| `skillhub_tags` | List SkillHub content tags (required when publishing; never hardcode) | ✅ yes |
-| `skillhub_whoami` | Check SkillHub login state (redacted) | ✅ yes |
-| `skillhub_publish` | Publish a local agent skill to SkillHub. **Dry-run by default**; pass `submit=true` to really submit | ✅ yes |
+| `museav_gen_background` | Generate backgrounds / images / video (via the backend) | ✅ yes |
+| `museav_remove_bg` | Background removal (BiRefNet / ISNet / U2Net), outputs alpha PNG | no, runs locally |
+| `museav_upscale_image` | Super-resolution (Real-ESRGAN + Vulkan GPU), 4x by default | no, runs locally |
+| `museav_remove_watermark` | Watermark removal (LaMa inpainting), auto-detects, accepts a manual mask | no, runs locally |
+| `museav_compress_image` | Compress (sharp); max edge / quality / format configurable | no, runs locally |
+| `museav_list_templates` | List available image / text templates (prefer these over hardcoding a `template`) | ✅ yes |
+| `museav_list_skills` | List available skills (prefer these over hardcoding a `skill` slug) | ✅ yes |
+| `museav_list_video_templates` | List video templates (sibling to `museav_list_templates`; pairs with `museav_gen_background`'s `video=true` + `template`) | ✅ yes |
+| `museav_list_models` | List models; `video=true` lists video tiers (feed straight into `museav_gen_background`'s `model`) | ✅ yes |
+| `museav_balance` | Check upstream balance | ✅ yes |
+| `museav_list_jobs` | List your generation jobs (result URLs, failure reasons) | ✅ yes |
+| `museav_upload_asset` | Upload an asset and get a public direct link (use when a reference image needs a URL) | ✅ yes |
+| `museav_image_to_template` | Image → template: read the image, invert text layers, parameterize | ✅ yes |
+| `museav_reverse` | Reverse a SCULPT prompt from an image (backend API). **Complements** `vlm_reverse_prompt` | ✅ yes |
+| `museav_skillhub_tags` | List SkillHub content tags (required when publishing; never hardcode) | ✅ yes |
+| `museav_skillhub_whoami` | Check SkillHub login state (redacted) | ✅ yes |
+| `museav_skillhub_publish` | Publish a local agent skill to SkillHub. **Dry-run by default**; pass `submit=true` to really submit | ✅ yes |
 
 ### `vlm` group — local vision (4)
 
@@ -134,7 +180,7 @@ curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.
 
 Install only what you need — an uninstalled group simply isn't registered, and nothing errors.
 
-`gen_background` additionally needs a backend apiKey (see the museav-cli README). Local tools download
+`museav_gen_background` additionally needs a backend apiKey (see the museav-cli README). Local tools download
 model weights on first run (matting ~214MB, upscaling ~65MB, watermark removal ~200MB, vlm's
 Qwen3-VL-4B about 2.9GB).
 
@@ -144,7 +190,7 @@ Point at executables outside the global PATH with `MUSEAV_BIN`, `MLX_VLM_BIN`, `
 ## Wiring it into an agent
 
 See the [Chinese README](README.md#接到-agent-上) for the full Claude Code / DSH / any-MCP-client config
-snippets, including how to pass `MUSEAV_MCP_GROUPS` through `env`.
+snippets, including how to pass `CS_MCP_GROUPS` through `env`.
 
 ## Not in yet (and why)
 
@@ -163,11 +209,13 @@ goes into the MCP.
 
 ```bash
 node test-mcp.mjs      # boots the server, runs initialize + tools/list
-                       # asserts: 27 tools, all 21 legacy tool names still present, group-switch logic
+                       # asserts: 43 tools, every name prefixed with its group id, old env name still works
 ```
 
-`MUSEAV_MCP_GROUPS=all` is how the test boots: CI has no CLIs installed, so the default probing strategy
-would register nothing and the tool set itself would go untested.
+`CS_MCP_GROUPS=all` is how the test boots: CI has no CLIs installed, so the default probing strategy
+would register nothing and the tool set itself would go untested. The legacy name `MUSEAV_MCP_GROUPS`
+gets a **second server boot** to prove it is equivalent — that rename's silent downgrade only shows on
+this path.
 
 ## Notes
 

@@ -1,10 +1,10 @@
 {
-  "name": "museav-mcp",
-  "version": "2.2.0",
-  "description": "MCP server — CS 系统（CortexOS）的 MCP：把个人工具链上各开源项目的 CLI 能力串成一张网，按「能力分组」组织（出图/视频、本地看图、对比度门禁、Markdown 排版…），装了哪个 CLI 就自动长出哪组工具。27 个工具，能力在 CLI 里，MCP 只做串联。",
+  "name": "cs-mcp",
+  "version": "3.0.0",
+  "description": "MCP server — CS 系统（CortexOS）的 MCP：把 owner 个人工具链上各开源项目的 CLI 能力串成一张网，按「能力分组」组织。cs 是核心，museav（在线出图/出视频）是云能力层，其余为本地能力。装了哪个 CLI 就自动长出哪组工具。43 个工具，能力在 CLI 里，MCP 只做串联。",
   "type": "module",
   "bin": {
-    "museav-mcp": "dist/index.js"
+    "cs-mcp": "dist/index.js"
   },
   "main": "dist/index.js",
   "scripts": {
@@ -13,8 +13,7 @@
     "start": "node dist/index.js",
     "prepublishOnly": "pnpm build && node scripts/prepublish-gate.mjs && node scripts/readme-gate.mjs",
     "test": "node test-mcp.mjs",
-    "pub": "cs kyvault run --env TOKEN=secret://npm/webkubor-publish -- sh -c 'npm publish --access public --//registry.npmjs.org/:_authToken=\"$TOKEN\"'",
-    "notify": "node ../notify.mjs"
+    "pub": "cs kyvault run --env TOKEN=secret://npm/webkubor-publish -- sh -c 'npm publish --access public --//registry.npmjs.org/:_authToken=\"$TOKEN\"'"
   },
   "engines": {
     "node": ">=20.19"
@@ -30,11 +29,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/webkubor/museav-mcp.git"
+    "url": "git+https://github.com/webkubor/cs-mcp.git"
   },
   "homepage": "https://docs.museav.top/cli/mcp",
   "bugs": {
-    "url": "https://github.com/webkubor/museav-mcp/issues"
+    "url": "https://github.com/webkubor/cs-mcp/issues"
   },
   "license": "MIT",
   "keywords": [

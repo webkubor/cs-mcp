@@ -33,19 +33,31 @@
  * 我第一次验证时没传 --agent，直接开在别人正在用的 default 会话上，把对方
  * 的页面导航走了（它的会话列表里有 11 个会话，分属多个 agent）。
  * 所以这个分组**每次都显式传 --agent**，默认 `mcp`，可用环境变量
- * MUSEAV_MCP_BROWSER_AGENT 改 —— 让 MCP 驱动的浏览永远不跟别的 agent 抢会话。
+ * CS_MCP_BROWSER_AGENT 改 —— 让 MCP 驱动的浏览永远不跟别的 agent 抢会话。
+ * （3.0.0 前的旧名 MUSEAV_MCP_BROWSER_AGENT 仍兼容，见 env.ts。）
  */
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { createRunner } from "../cli.js";
 import { BROWSER_CLI } from "../clis.js";
+import { BROWSER_AGENT_ENV, BROWSER_AGENT_ENV_LEGACY } from "../env.js";
 import type { CapabilityGroup } from "../registry.js";
 
 const runBrowser = createRunner(BROWSER_CLI);
 
-/** MCP 自己的浏览器身份 —— 见文件头「身份隔离」 */
+/**
+ * MCP 自己的浏览器身份 —— 见文件头「身份隔离」。
+ *
+ * 改名时最容易漏掉的一个变量：漏掉不会报错，只是静默退回 `mcp`，
+ * 而 `mcp` 这个身份可能正跟另一个 MCP 实例共用会话（就是文件头那次踩的坑）。
+ * 所以旧名一并读，且空字符串两边都算「没设」。
+ */
 function agent(): string {
-  return process.env.MUSEAV_MCP_BROWSER_AGENT?.trim() || "mcp";
+  return (
+    process.env[BROWSER_AGENT_ENV]?.trim() ||
+    process.env[BROWSER_AGENT_ENV_LEGACY]?.trim() ||
+    "mcp"
+  );
 }
 
 /** 每个命令都要带上的身份参数 */

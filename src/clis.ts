@@ -11,6 +11,36 @@
  */
 import type { CliSpec } from "./cli.js";
 
+/**
+ * ⚠️ `minVersion` 只在**确认这个 CLI 的 `--version` 能正常返回版本号**时才填。
+ * 目前六个分组里只有 MUSEAV_CLI 填了 —— 这不是漏了，是另外五个不该填。
+ *
+ * 2026-10-13 实测（`<cmd> --version`，看退出码 + stdout）：
+ *
+ * | CLI | 退出码 | stdout | 能不能填 minVersion |
+ * |---|---|---|---|
+ * | museav       | 0 | `3.12.0`            | ✅ 唯一有真实版本下限的（3.9.0 起命令才齐） |
+ * | vlm          | 0 | `vlm 0.1.0`         | ❌ 能报版本，但没有确立的下限，填了纯属自找 |
+ * | lite-browser | 0 | `lite-browser 1.5.0`| ❌ 同上 |
+ * | contrast-guard | **2** | 空（话在 stderr：「未找到 contrast.config」） | ❌ 见下 |
+ * | facet        | **1** | 空（node 内部异常栈） | ❌ 见下 |
+ * | reel         | **1** | 打印帮助文本，**全文没有版本号** | ❌ 见下 |
+ *
+ * **后三个填了不是「版本误报」，是整组永久不可用。** 链路：`createRunner`
+ * 的 `ensure()` 用 `execFile` 跑 `--version`，而它**只吞 ENOENT**（cli.ts:150）；
+ * 这三个 CLI 非零退出 → 直接 throw → 而这个 throw 逃出 `run()` 的 try 块，
+ * 根本没机会被转成「请升级」。
+ * 后果是该分组**每一个工具**调用都失败；且失败不被缓存（cli.ts:165 有意为之，
+ * 为了让用户装好之后不必重启），于是**每次调用都重新探测、每次都以同样的方式失败**。
+ *
+ * 顺带一个反直觉点：这三个的 stdout 都是空的，所以 cli.ts:153 那句
+ * `raw.match(/\d+\.\d+\.\d+/)` 不会从垃圾里抠出个假版本号 —— 也就是说
+ * 「错误退出码」比「错误输出」更致命，别指望正则兜底。
+ *
+ * 真要给它们加版本守卫，得先让各自的 CLI 支持 `--version`（或加 `versionArgs`
+ * 指向别的子命令），**不是**在这儿填个号就完事。
+ */
+
 /** MUSE AV 出图中台：出图/视频、本地后期、模板技能、SkillHub */
 export const MUSEAV_CLI: CliSpec = {
   name: "museav-cli",
@@ -20,7 +50,7 @@ export const MUSEAV_CLI: CliSpec = {
   minVersion: "3.9.0",
 };
 
-/** 本地看图理解（Apple MLX）。没有 --version，所以不做版本守卫。 */
+/** 本地看图理解（Apple MLX）。能报版本（`vlm --version` → 0.1.0），但没确立下限，故不设守卫。 */
 export const VLM_CLI: CliSpec = {
   name: "mlx-vlm-kit",
   envVar: "MLX_VLM_BIN",
@@ -36,6 +66,7 @@ export const CONTRAST_CLI: CliSpec = {
   envVar: "CONTRAST_GUARD_BIN",
   command: "contrast-guard",
   install: "npm i -g contrast-guard@latest",
+  // 无 minVersion：它的 --version 退出码 2（见文件头表格），填了整组会挂
   timeoutMs: 300_000,
   maxChars: 6000,
   // 不达标时它把报告打到 stdout 然后 exit 1 —— 那是判据，不是调用失败
@@ -48,6 +79,7 @@ export const FACET_CLI: CliSpec = {
   envVar: "FACET_BIN",
   command: "facet",
   install: "npm i -g @webkubor/facet@latest",
+  // 无 minVersion：--version 走到 node 内部异常、退出码 1（见文件头表格）
   timeoutMs: 300_000,
   maxChars: 4000,
 };
@@ -65,6 +97,7 @@ export const REEL_CLI: CliSpec = {
   command: "reel",
   purpose: "竖版短视频合成靠它，且需要系统里有 ffmpeg",
   install: "npm i -g @kubor/reel-kit@latest（另外需要 ffmpeg：brew install ffmpeg）",
+  // 无 minVersion：reel --version 不认识这个选项，退出码 1、只打帮助文本
   timeoutMs: 900_000,
   maxChars: 4000,
 };
@@ -85,6 +118,7 @@ export const BROWSER_CLI: CliSpec = {
   command: "lite-browser",
   purpose: "浏览器操控靠它",
   install: "curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.sh | bash",
+  // 无 minVersion：能报版本（1.5.0），但没确立下限
   timeoutMs: 900_000,
   maxChars: 6000,
   stateExitCodes: {

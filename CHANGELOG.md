@@ -1,5 +1,102 @@
 # Changelog
 
+## 3.0.0 (2026-10-13)
+
+### 正名：museav-mcp → cs-mcp。它是 cs 的，不是 museav 的
+
+owner 口径一句话：**cs 是核心，museav 是云能力。**
+
+旧名一直和它自己的定位拧着 —— 头注释早就写着「CS 系统（CortexOS）的 MCP，owner 个人工具链的
+串联层」，6 个分组里 5 个与 museav 无关；而它的 remote 本来就挂在**个人账号**下，反倒
+`museav-manager` / `web-ui` / `museav-docs` 都在 `gitlab.com/museav/*` 组织里。
+**这次改名不是把它搬出 museav，是让仓库名追认它本来就在的地方。**
+
+仓库、npm 包名、`bin` 命令、server 名、README 全部统一成 `cs-mcp`；本地目录从
+`~/dev/muse/museav-mcp` 归位到 `~/dev/agent-infra/cs-mcp`（与 contrast-guard / facet /
+lite-browser / kyvault 这些个人工具链仓住一起）。
+
+#### ⚠️ 老工具名契约作废（破坏性）
+
+3.0.0 起，`museav` 那 17 个工具**统一加 `museav_` 前缀**：
+
+```
+gen_background → museav_gen_background      list_jobs → museav_list_jobs
+remove_bg      → museav_remove_bg           …（共 17 个，动作词一个字没改）
+```
+
+**为什么现在才敢改**：2.2.0 的条目说「21 个工具名一个字没动，老用户的 agent 正靠它们干活」——
+那个前提**不成立**。这个包 2026-10-05 已从 npm 撤下（此前误发到公司账号），从未面向外部发布，
+**没有下游契约要保护**。所以「只增不减」这条自我约束在这里是多余的，撤掉它反而是对的：
+现在改的成本是 0，等到真有人用了再改，成本就不是 0 了。
+
+顺带把全仓唯一的命名例外补平了 —— 现有约定是 `<分组id>_<动作>`，6 组里 5 组早就遵守
+（`vlm_*` / `contrast_*` / `facet_*` / `reel_*` / `browser_*`），只有 `museav` 那 17 个
+因为是「从旧单文件原样搬过来的，一个字都没改」而没前缀。**`test-mcp.mjs` 现在把这条规范
+写成断言**：每个工具名必须以所属分组 id 开头（`groups_list` 除外），以后再想接一组，
+名字不一致会在 CI 就被拦住，而不是靠人记得。前缀集合从 `registry.ts` 的 `GROUPS` 推导，
+新增分组不用改测试。
+
+这也让「**museav = 云能力**」在工具面上直接可读：带 `museav_` 的 17 个是在线服务（要登录、
+要网络、有余额、会花钱），其余全是离线确定性计算。
+
+#### ⚠️ 环境变量改名（带旧名兼容，别漏）
+
+| 旧 | 新 |
+|---|---|
+| `MUSEAV_MCP_GROUPS` | `CS_MCP_GROUPS` |
+| `MUSEAV_MCP_BROWSER_AGENT` | `CS_MCP_BROWSER_AGENT` |
+
+**两个都保留旧名兜底**，新名优先；两个都设且值不同时以新名走并往 stderr 报一句。
+
+为什么必须留、为什么值得单独写一段：**变量名被忽略时不会报错，会静默降级**。
+旧变量没读到 → 开关值变空 → `selectGroups` 判定 `byDefault = true` → 悄悄退回「装了 CLI 才启用」。
+原先写 `MUSEAV_MCP_GROUPS=all` 的人，那些本机没装 CLI 而被强开的分组会**无声消失**；
+写 `-museav` 的人，排除会**无声失效**。更糟的是此时 include/exclude 都空，
+连「不认识的 id」告警都不会触发 —— **全程零可见信号**。
+
+现在这条路径有三级可见性：stderr 一行「正在用旧变量名」，`groups_list` 输出头的提示，
+以及 `test-mcp.mjs` 里**真起第二次 server** 断言新旧名起出同一份 43 个工具。
+
+`MUSEAV_MCP_BROWSER_AGENT` 是更容易漏的那个（第二个变量）：漏了不报错，只是浏览器身份
+静默退回 `mcp` —— 而 `mcp` 可能正跟另一个实例共用会话，正是当初加这个变量要防的事。
+
+#### 客户端命名空间：DSH 的 `serverName` 从 `museav` 改成 `cs`
+
+`serverName` 决定客户端里的工具命名空间。不改的话，加了前缀会变成
+`mcp__museav__museav_gen_background` 这种双重前缀，所以一并改成 `cs`
+（`mcp__cs__museav_gen_background`），并同步 `dsh-museav-assets` 里的 9 处引用。
+
+DSH / WorkBuddy 是 **GUI 工具、不是 Agent**（见 gui-not-agent 红线）—— 改的是工具自身的
+配置文件，不是给它派活。
+
+#### 修掉的坑
+
+- **`resolveGroupsSpec` 单独抽成叶子模块 `src/env.ts`**：`groups/browser.ts` 也要读环境
+  变量，而 `registry.ts` 已经 import 了 `browser.ts`，运行时值放 `registry.ts` 会构成循环依赖。
+- **`src/clis.ts` 补了一份 `minVersion` 能不能填的实测表**。六个 CLI 里只有 `museav` 能填，
+  另外五个不是「漏了」：
+  `museav` ✓（3.12.0）、`vlm` ✓（0.1.0）、`lite-browser` ✓（1.5.0）但都没确立下限；
+  **`contrast-guard` 退出码 2、`facet` 退出码 1、`reel` 不认识这个选项（退出码 1）** ——
+  这三个填了不是「版本误报」，是**整组永久不可用**：`ensure()` 只吞 ENOENT，非零退出
+  直接 throw 且不被 `run()` 捕获，而失败不缓存，于是每次调用都重探、每次都同样失败。
+- **`package.json` 去掉 `notify` 脚本**：目录搬家后 `../notify.mjs` 相对路径已断；更根本的是
+  那个脚本的头注释写明「严禁走外部 CS 系统」，本包不该用它（发版通报走
+  `publish.yml` → `manager.museav.top/api/cli-release`）。
+- 描述里「27 个工具」漂移成 43，一并修。
+
+#### 与 `cs mcp serve` 的关系（没变，但值得说清）
+
+系统里有**两个**「cs 的 MCP」，互补不重合：`cs mcp serve`（Go，server 名 `cortexos`）
+管**系统上下文**（规则/技能/知识搜索/CLI 台账），本仓管**工具链串联**。
+长期看，按收敛定律（能力的默认归属是范围最大的那个载体）加上本仓「能力在 CLI 里，
+MCP 只做串联」这条硬原则 —— 而 `cs` 本身就是个 CLI —— cs 核心能力应当作为 cs-mcp 的
+一个 `cs` 分组薄封装，两个 MCP 收敛成一个。**本轮不做**（跨语言，会动 `cmd/mcp.go`），
+已在 README 写明区别。
+
+> 发布说明：`cs-mcp` 这个名字在 npm 上 2025-04-25 也被撤过，当前是空位。本包走 Trusted
+> Publishing(OIDC) + provenance，绑定是 npmjs.com 上「仓库 + workflow」维度的 ——
+> GitHub 仓改名后**必须在 npmjs.com 重新绑定**，否则发布必失败。
+
 ## 2.2.0 (2026-10-02)
 
 ### 从「museav 的 MCP」变成 CS 系统的 MCP：能力分组化，开始串联整条工具链
