@@ -256,6 +256,11 @@ vlm 的 Qwen3-VL-4B 约 2.9GB）。
 
 ## 接到 Agent 上
 
+> ⚠️ 下面三段默认都写 `npx -y cs-mcp`，而 **3.0.0 还没发到 npm**，照抄会起不来
+> （详见上文「30 秒上手」的警告）。发布前把 `command` / `args` 换成
+> `node` + `/绝对路径/cs-mcp/dist/index.js` 即可 —— 本机 Claude Code 与 DSH 现在都是这么接的。
+> 下面保留 npx 写法，因为它是发布后的稳定形态。
+
 Claude Code 一行（发布后）：
 
 ```bash
