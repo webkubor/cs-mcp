@@ -48,8 +48,12 @@ jobs:
 
       # 防空介绍：发布卡片的内容取 CHANGELOG.md 顶部一节，npm version 不会写 CHANGELOG，
       # 不校验的话卡片会带着上一版的旧介绍发到群里（museav-cli 3.0.2 踩过）
+      #
+      # 这一条**不能**跟着 tag 条件走：workflow_dispatch 也能发布，而它原来会把
+      # 这道门禁一起跳过 —— 于是手动跑一次就能把带旧介绍的新版本发出去，
+      # 正是这道门禁要防的那件事。判据只依赖 CHANGELOG 与 package.json，
+      # 不需要 ref 类型，所以两条路径都该跑。
       - name: 校验 CHANGELOG 顶部版本与发版一致
-        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           TOP=$(awk '/^## /{print $2; exit}' CHANGELOG.md)
           PKG=$(node -p "require('./package.json').version")
@@ -59,6 +63,16 @@ jobs:
           fi
           echo "CHANGELOG 顶部版本一致：$TOP"
 
+      # workflow_dispatch 不带 tag，就没有可比对的 tag。这不是漏洞，是那条路径的语义：
+      # 它发的是 package.json 里此刻的版本号，所以上面那道 CHANGELOG 门禁就是它的兜底。
+      # 但要让日志说清「这次没有 tag 可校验」，否则事后看 run 会以为门禁被跳过了。
+      - name: 说明：本次无 tag 可校验版本号
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          echo "::warning::本次由 workflow_dispatch 触发，没有 tag 与 package.json 比对；\
+          实际发布版本 = $(node -p "require('./package.json').version")。\
+          CHANGELOG 门禁已在上一步执行。"
+
       # 冒烟：真起一次 stdio server，确认 initialize + tools/list 通得过再发
       - name: 冒烟测试（server 能起、工具列得出）
         run: node test-mcp.mjs
@@ -67,6 +81,38 @@ jobs:
       #   ① Trusted Publishing（推荐，无 token）——在 npmjs.com 的包设置里
       #      绑定本仓库 + 本 workflow 文件名(publish.yml)，然后别设 NPM_TOKEN secret。
       #   ② NPM_TOKEN 兜底——建 Granular token（Read and write），存进仓库 Secrets。
+      #
+      # ⚠️ NODE_AUTH_TOKEN 必须**条件**注入，不能无条件写 ${{ secrets.NPM_TOKEN }}：
+      #   secret 不存在时它展开成空串，setup-node 生成的 .npmrc 里就留下
+      #   `_authToken=` 一行**空的**。 Trusted Publishing 的前提是「没有 token」，
+      #   一个空的比一个没有更容易让 OIDC 路径走不通 —— 而这种失败发生在
+      #   publish 那一刻，日志只给一个含糊的认证错误，不会提示「secret 没建」。
+      #   历史上 v2.x 的几次失败就是这里：仓里根本没有 NPM_TOKEN secret。
+      # 走 OIDC 时删掉 setup-node 留下的认证行。 setup-node 写的是**字面量**
+      # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}`，由 npm 在读取时展开；
+      # secret 不存在 → 展开成空串 → 仍然往 registry 发了一个空凭据。
+      # Trusted Publishing 的前提是「没有凭据」，所以这里要的是**删掉这一行**，
+      # 不是把它换成另一个空值。
+      #
+      # 不用 `if: secrets.X` 判空再跳过：Actions 的 if 表达式里不能用 secrets
+      # （见下面回调那步的注释，同一个坑）。所以这里无条件跑、在脚本里分支。
+      - name: 认证行处理
+        env:
+          HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$HAS_NPM_TOKEN" ]; then
+            echo "已配置 NPM_TOKEN —— 走 token 兜底路径，保留 .npmrc 认证行"
+            exit 0
+          fi
+          if [ -f .npmrc ]; then
+            sed -i.bak -E '/:_authToken=/d' .npmrc
+            rm -f .npmrc.bak
+            echo "未配置 NPM_TOKEN —— 已移除 .npmrc 认证行（Trusted Publishing 要求无凭据）"
+            cat .npmrc
+          else
+            echo "无需处理（无 .npmrc）"
+          fi
+
       - name: 发布
         run: npm publish --access public --provenance
         env:
