@@ -23,7 +23,7 @@ export const GROUPS_ENV = "CS_MCP_GROUPS";
  */
 export const GROUPS_ENV_LEGACY = "MUSEAV_MCP_GROUPS";
 
-/** MCP 驱动浏览器时的 lite-browser 身份（会话按 agent 隔离，见 groups/browser.ts） */
+/** MCP 驱动浏览器时的 ego-browser TaskSpace 身份（空间按 agent 隔离，见 groups/browser.ts） */
 export const BROWSER_AGENT_ENV = "CS_MCP_BROWSER_AGENT";
 export const BROWSER_AGENT_ENV_LEGACY = "MUSEAV_MCP_BROWSER_AGENT";
 

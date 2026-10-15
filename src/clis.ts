@@ -21,7 +21,7 @@ import type { CliSpec } from "./cli.js";
  * |---|---|---|---|
  * | museav       | 0 | `3.12.0`            | ✅ 唯一有真实版本下限的（3.9.0 起命令才齐） |
  * | vlm          | 0 | `vlm 0.1.0`         | ❌ 能报版本，但没有确立的下限，填了纯属自找 |
- * | lite-browser | 0 | `lite-browser 1.5.0`| ❌ 同上 |
+ * | ego-browser | 0 | `ego-browser 0.5.1.13`| ❌ 同上 |
  * | contrast-guard | **2** | 空（话在 stderr：「未找到 contrast.config」） | ❌ 见下 |
  * | facet        | **1** | 空（node 内部异常栈） | ❌ 见下 |
  * | reel         | **1** | 打印帮助文本，**全文没有版本号** | ❌ 见下 |
@@ -113,16 +113,11 @@ export const REEL_CLI: CliSpec = {
  * 它不在 npm 上（bun 编译出来的单文件二进制），装法只有 install.sh 一条。
  */
 export const BROWSER_CLI: CliSpec = {
-  name: "lite-browser",
-  envVar: "LITE_BROWSER_BIN",
-  command: "lite-browser",
-  purpose: "浏览器操控靠它",
-  install: "curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.sh | bash",
-  // 无 minVersion：能报版本（1.5.0），但没确立下限
+  name: "ego-browser",
+  envVar: "EGO_BROWSER_BIN",
+  command: "ego-browser",
+  purpose: "浏览器操控靠它（ego lite 的 Chromium）",
+  install: "安装 ego lite 到 /Applications 并完成首次引导（https://lite.ego.app）",
   timeoutMs: 900_000,
   maxChars: 6000,
-  stateExitCodes: {
-    3: "需要人类介入（登录 / 授权）—— 用 browser_status 看它在等什么，然后转告用户",
-    4: "等待人类超时 —— 人没在时限内完成；可以延长 timeout 再试一次",
-  },
 };

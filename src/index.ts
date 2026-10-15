@@ -32,7 +32,7 @@
  * | contrast | contrast-guard  | 本地 | 对比度门禁：静态检查 + 渲染后计量 |
  * | facet    | @webkubor/facet | 本地 | Markdown 排版成 PDF / 长图 / 讲稿页 |
  * | reel     | @kubor/reel-kit | 本地 | 素材 + 逐句文案 → 竖版成片（需要 ffmpeg） |
- * | browser  | lite-browser    | 本地 | 真实 Chrome 操控 + 人类交接协议 |
+ * | browser  | ego-browser     | 本地 | ego lite 的 Chromium 操控 + 人类交接协议 |
  *
  * owner 口径：**cs 是核心，museav 是云能力**。museav 组要登录、要网络、有余额配额，
  * 其余五组是离线确定性计算 —— 性质不同，工具名也用 `museav_` 前缀标出来。
