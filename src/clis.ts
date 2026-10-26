@@ -60,12 +60,16 @@ export const VLM_CLI: CliSpec = {
   maxChars: 3000,
 };
 
-/** 对比度门禁：静态检查 + 渲染后计量。check 是 cwd 敏感的（读 contrast.config.*）。 */
+/**
+ * 前端视觉、对比度与交互自适应守卫（原 contrast-guard，现演进为 frontend-contrast-guard）。
+ * 静态检查 + 渲染后计量。check 是 cwd 敏感的（读 contrast.config.*）。
+ */
 export const CONTRAST_CLI: CliSpec = {
-  name: "contrast-guard",
+  name: "frontend-contrast-guard",
   envVar: "CONTRAST_GUARD_BIN",
   command: "contrast-guard",
-  install: "npm i -g contrast-guard@latest",
+  purpose: "前端视觉、色彩对比度与交互自适应门禁靠它",
+  install: "npm i -g frontend-contrast-guard@latest (或 contrast-guard)",
   // 无 minVersion：它的 --version 退出码 2（见文件头表格），填了整组会挂
   timeoutMs: 300_000,
   maxChars: 6000,
