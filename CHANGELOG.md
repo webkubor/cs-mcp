@@ -12,8 +12,10 @@
   已经要付 6 种安装方式的代价（npm / pipx / brew / curl）。如果网关自己还得
   `npm i -g` 或 `npx -y`，等于在最前面再加一道 Node + npm + registry 网络的门槛 ——
   而它本该是**把门槛降到一条命令**的那一层。多数用户会卡在起手第一步。
-- **npm 上那个 `cs-mcp` 包标记为不维护**（`npm deprecate`），不再更新；它同时占住
-  名字，避免被第三方抢注后老用户 `npx -y cs-mcp` 拉到别人的包。
+- **npm 上不再发这个包**：发布 workflow、`pub` 脚本、package.json 里的 npm 打包字段
+  （main / bin / files / publishConfig / prepublishOnly）整体删除 —— 不发 npm 的项目
+  留着这些就是死配置。npm 上的 `cs-mcp` 名字自 2025-04-25 起就是空的（旧包已撤下），
+  不再占坑也不再维护。
 - **发布流水线改成交叉编译**：tag `v*` → macOS(arm64/x64) / Linux(x64/arm64)
   四个平台的单文件二进制 → 挂到 GitHub Release → 回调业务中台发卡片。npm 发布
   workflow 与 `pub` 脚本整体拆掉。

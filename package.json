@@ -3,15 +3,10 @@
   "version": "3.2.0",
   "description": "MCP server — CS 系统（CortexOS）的对外开源工具链网关：把 owner 个人开源工具链与技能串成一张网，按「能力分组」组织。装了哪个 CLI 就自动长出哪组工具。49 个工具，8 个能力分组，能力在 CLI/Skill 里，MCP 只做串联。",
   "type": "module",
-  "bin": {
-    "cs-mcp": "dist/index.js"
-  },
-  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "prepublishOnly": "pnpm check",
     "test": "node test-mcp.mjs",
     "build:binary": "node scripts/build-binary.mjs",
     "check": "node scripts/prepublish-gate.mjs && node scripts/readme-gate.mjs && node scripts/version-sync-gate.mjs && npx tsc --noEmit && pnpm build && node test-mcp.mjs"
@@ -54,15 +49,5 @@
     "skillhub",
     "小红书",
     "出图"
-  ],
-  "files": [
-    "dist/",
-    "README.md",
-    "README.en.md",
-    "CHANGELOG.md",
-    "LICENSE"
-  ],
-  "publishConfig": {
-    "access": "public"
-  }
+  ]
 }
