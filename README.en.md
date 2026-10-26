@@ -114,8 +114,8 @@ claude mcp add cs -- ~/.local/bin/cs-mcp
 > If the gateway itself needs `npm i -g` or `npx -y`, that adds a Node + npm +
 > registry-network hurdle in front of everything else, when the whole point of
 > this layer is to *lower* the bar to one command. Most people never get past
-> step one. (The `cs-mcp` package on npm is marked unmaintained and will not be
-> updated.)
+> step one. (The `cs-mcp` package on npm was unpublished long ago and this repo
+> no longer publishes to npm — the installer above is the only supported way.)
 
 **Install whichever CLI you want a group for** — a group's tools appear only when its CLI is installed:
 
