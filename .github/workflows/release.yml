@@ -1,0 +1,162 @@
+name: release
+
+# 发版：推 v* tag → 交叉编译各平台单文件二进制 → 挂到 GitHub Release → 通知业务中台。
+#
+# ## 为什么是二进制而不是 npm 包
+#
+# cs-mcp 是「总网关」：底下包着 museav-cli、mlx-vlm-kit、contrast-guard、facet、
+# reel-kit、lite-browser 一堆东西，用户为了用上全套能力，已经要付 6 种安装方式的
+# 代价（npm / pipx / brew / curl）。如果网关自己还得 `npm i -g` 或 `npx -y`，
+# 等于在最前面再加一道 Node + npm + registry 网络的门槛 —— 而它本该是
+# **把门槛降到一条命令**的那一层。多数用户会卡在起手第一步。
+#
+# 所以分发形态定为：单文件自包含二进制（内含 runtime）+ 一条安装命令
+# （install.sh 拉 Release 产物）。用户机器上不需要 Node，也不需要 npm。
+# npm 上那个 cs-mcp 包已标记为不维护（见 CHANGELOG），不再更新。
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write # 建 Release / 挂产物要写权限
+
+jobs:
+  # ── 门禁：所有东西都过了才准编译 ────────────────────────────────────────
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      # 三道契约门禁（prepublish / readme / version-sync）——
+      # 与原来 npm 发布时跑的是同一套，一个都不许少
+      - name: 发版契约门禁
+        run: |
+          node scripts/prepublish-gate.mjs
+          node scripts/readme-gate.mjs
+          node scripts/version-sync-gate.mjs
+
+      - name: 类型检查
+        run: npx tsc --noEmit
+
+      - name: 构建（node 路径）
+        run: pnpm build
+
+      - name: 冒烟（node 路径）
+        run: node test-mcp.mjs
+
+      # 二进制才是主分发形态 —— 它必须过同一套协议冒烟
+      - name: 构建二进制
+        run: node scripts/build-binary.mjs
+
+      - name: 冒烟（二进制路径）
+        run: CS_MCP_BIN="$PWD/dist/cs-mcp" node test-mcp.mjs
+
+  # ── 交叉编译各平台产物 ──────────────────────────────────────────────────
+  build:
+    needs: gates
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: bun-darwin-arm64
+            asset: cs-mcp-darwin-arm64
+          - target: bun-darwin-x64
+            asset: cs-mcp-darwin-x64
+          - target: bun-linux-x64
+            asset: cs-mcp-linux-x64
+          - target: bun-linux-arm64
+            asset: cs-mcp-linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 交叉编译 ${{ matrix.asset }}
+        run: node scripts/build-binary.mjs --target=${{ matrix.target }} --out=${{ matrix.asset }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+          if-no-files-found: error
+
+  # ── 发布 ────────────────────────────────────────────────────────────────
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: 建 Release（挂各平台二进制）
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          chmod +x dist/cs-mcp-* || true
+          NOTES=$(mktemp)
+          awk '/^## /{if(n++) exit} {print}' CHANGELOG.md > "$NOTES"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/cs-mcp-* --clobber
+          else
+            gh release create "$TAG" dist/cs-mcp-* \
+              --title "$TAG — $(head -1 "$NOTES")" \
+              --notes-file "$NOTES"
+          fi
+
+      # 回调业务中台：POST /api/cli-release，由中台统一记录更新日志 + 用 App 发卡片
+      # 通知到目标群。卡片格式是中台的事，GitHub 这边只传包名/版本/更新说明。
+      - name: 回调业务中台（记录发布 + 群通知）
+        env:
+          CLI_RELEASE_TOKEN: ${{ secrets.CLI_RELEASE_TOKEN }}
+        run: |
+          # GitHub Actions 的 if: 表达式不能直接用 secrets（Unrecognized named-value），
+          # 只能把 secret 放进 env，再在 run 里判断是否配置。
+          if [ -z "$CLI_RELEASE_TOKEN" ]; then
+            echo "未配置 CLI_RELEASE_TOKEN，跳过发布通知（不影响发布）"
+            exit 0
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          BODY=$(awk '/^## /{if(n++) exit} {print}' CHANGELOG.md | head -15)
+          curl -s -X POST "https://manager.museav.top/api/cli-release" \
+            -H "Authorization: Bearer $CLI_RELEASE_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg p cs-mcp --arg v "$VERSION" --arg c "$BODY" '{package: $p, version: $v, changes: $c}')" \
+            || echo "回调业务中台失败(忽略，不影响发布)"

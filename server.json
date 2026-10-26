@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.webkubor/cs-mcp",
+  "description": "CS 系统（CortexOS）的 MCP 网关：把个人工具链里各开源项目的 CLI 能力串成一张网，按「能力分组」组织，装了哪个 CLI 就自动长出哪组工具。",
+  "status": "active",
+  "version": "3.2.0",
+  "repository": {
+    "url": "https://github.com/webkubor/cs-mcp",
+    "source": "github"
+  },
+  "website_url": "https://github.com/webkubor/cs-mcp#readme",
+  "packages": [
+    {
+      "registry_type": "github-releases",
+      "identifier": "webkubor/cs-mcp",
+      "version": "3.2.0",
+      "runtime_hint": "cs-mcp",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

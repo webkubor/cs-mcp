@@ -7,10 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/v/cs-mcp?style=for-the-badge&color=3fb950&logo=npm&label=npm" alt="npm" /></a>
-  <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/dm/cs-mcp?style=for-the-badge&color=6d7f9c&label=downloads" alt="downloads" /></a>
+  <a href="https://github.com/webkubor/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/webkubor/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
   <img src="https://img.shields.io/badge/tools-49-4d6bfe?style=for-the-badge" alt="tools" />
-  <img src="https://img.shields.io/badge/runtime_deps-2-5A9E6F?style=for-the-badge" alt="deps" />
+  <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
 </p>
@@ -27,7 +27,7 @@
 
 | | `cs mcp serve`（CortexOS 内置） | **本仓 cs-mcp** |
 |---|---|---|
-| 形态 | Go，`cs` 的一个子命令 | TypeScript，独立 npm 包 |
+| 形态 | Go，`cs` 的一个子命令 | TypeScript，单文件二进制（也可从源码跑） |
 | server 名 | `cortexos` | `cs` |
 | 管什么 | **系统上下文**：规则 / 技能 / 知识搜索 / CLI 台账 / Agent 上下文 | **工具链串联**：各开源项目的 CLI 能力 |
 | 真源 | `cli-registry.json` + `docs/rules` + `skills` | 各项目自己的 CLI |
@@ -93,26 +93,40 @@ CS_MCP_GROUPS=-museav          # 默认集里去掉这几个
 
 ## ⚡ 30 秒上手
 
-> ⚠️ **3.0.0 尚未发到 npm**（`cs-mcp` 这个名字 2025-04-25 被撤过、`museav-mcp` 2026-10-05 被撤过，
-> 两个都还是空位）。发布前请用下面的「从源码起」那一种；`npx -y cs-mcp` 要等 3.0.0 真发出去才成立。
+**装（一条命令，不需要 Node，也不需要 npm）：**
 
 ```bash
-npm i -g museav-cli                    # 想要哪组能力，就装哪个 CLI（这一行是出图那组）
+curl -fsSL https://raw.githubusercontent.com/webkubor/cs-mcp/main/install.sh | bash
 ```
 
-发布之后（一行接入，任何支持 MCP 的客户端都认）：
+装完会自报版本（`cs-mcp --version`），并把接法一并打出来：
 
 ```bash
-claude mcp add cs -- npx -y cs-mcp
+claude mcp add cs -- ~/.local/bin/cs-mcp
 ```
 
-现在就能用（从本地 clone 起）：
+> **为什么不是 `npx -y cs-mcp`**：这个网关底下包着 museav-cli、mlx-vlm-kit、
+> contrast-guard、facet、reel-kit、lite-browser 一堆东西 —— 用户为了用上全套能力，
+> 已经要付 6 种安装方式的代价（npm / pipx / brew / curl）。如果网关自己还得
+> `npm i -g` 或 `npx -y`，等于在最前面再加一道 Node + npm + registry 网络的门槛，
+> 而它本该是**把门槛降到一条命令**的那一层。多数用户会卡在起手第一步。
+> （npm 上那个 `cs-mcp` 包已标记为不维护，不再更新。）
+
+**想要哪组能力就装哪个 CLI** —— 装了哪个 CLI 就自动长出哪组工具，没装的不会白占上下文：
+
+```bash
+npm i -g museav-cli                    # 这一行是出图那组
+```
+
+**从源码起**（改这个仓、或不想下二进制）：
 
 ```bash
 git clone https://github.com/webkubor/cs-mcp && cd cs-mcp
 pnpm install && pnpm build
 claude mcp add cs -- node "$PWD/dist/index.js"
 ```
+
+> Windows 暂时没有一键脚本，用 WSL 或走「从源码起」那条。
 
 然后在 Agent 里说「用 museav 出一张图」，或者先问一句「这个 MCP 有哪些能力分组」。
 
@@ -258,15 +272,13 @@ vlm 的 Qwen3-VL-4B 约 2.9GB）。
 
 ## 接到 Agent 上
 
-> ⚠️ 下面三段默认都写 `npx -y cs-mcp`，而 **3.0.0 还没发到 npm**，照抄会起不来
-> （详见上文「30 秒上手」的警告）。发布前把 `command` / `args` 换成
-> `node` + `/绝对路径/cs-mcp/dist/index.js` 即可 —— 本机 Claude Code 与 DSH 现在都是这么接的。
-> 下面保留 npx 写法，因为它是发布后的稳定形态。
+> 下面三段的 `command` 都是装好的那个二进制（`cs-mcp`）。如果它不在 PATH 里，
+> 就写绝对路径 —— 装完 `cs-mcp --version` 会告诉你装在哪。
 
-Claude Code 一行（发布后）：
+Claude Code 一行：
 
 ```bash
-claude mcp add cs -- npx -y cs-mcp
+claude mcp add cs -- cs-mcp
 ```
 
 DSH 在 profile 的 `cordis.patch.yml` 里加一行：
@@ -277,8 +289,8 @@ DSH 在 profile 的 `cordis.patch.yml` 里加一行：
   config:
     serverName: cs
     transport: stdio
-    command: npx
-    args: ['-y', 'cs-mcp']
+    command: cs-mcp
+    args: []
 ```
 
 > `serverName` 决定客户端里的**工具命名空间**：`cs` 让工具叫 `mcp__cs__museav_gen_background`。
@@ -293,8 +305,8 @@ DSH 在 profile 的 `cordis.patch.yml` 里加一行：
 {
   "mcpServers": {
     "cs": {
-      "command": "npx",
-      "args": ["-y", "cs-mcp"]
+      "command": "cs-mcp",
+      "args": []
     }
   }
 }
@@ -306,8 +318,8 @@ DSH 在 profile 的 `cordis.patch.yml` 里加一行：
 {
   "mcpServers": {
     "cs": {
-      "command": "npx",
-      "args": ["-y", "cs-mcp"],
+      "command": "cs-mcp",
+      "args": [],
       "env": { "CS_MCP_GROUPS": "all" }
     }
   }
@@ -320,8 +332,7 @@ DSH 在 profile 的 `cordis.patch.yml` 里加一行：
 pnpm install && pnpm build     # 产物在 dist/，package.json 的 bin 指向它
 ```
 
-配置里把 `command` 换成 `node`、`args` 指向 `/绝对路径/cs-mcp/dist/index.js` 即可
-（**3.0.0 发布前这是唯一可用的接法**，见「30 秒上手」）。
+配置里把 `command` 换成 `node`、`args` 指向 `/绝对路径/cs-mcp/dist/index.js` 即可。
 
 ## 还没进来的项目（以及为什么）
 

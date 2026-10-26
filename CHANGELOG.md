@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.2.0 (2026-10-26)
+
+### 分发形态改版：单文件二进制 + 一条安装命令，不再发 npm
+
+- **一个自包含二进制 + 一条安装命令**：`curl -fsSL .../install.sh | bash` 装到
+  `~/.local/bin/cs-mcp`，用户机器上**不需要 Node，也不需要 npm**。装完
+  `cs-mcp --version` 自证装对了。
+- **为什么不用 npm / npx**：这个网关底下包着 museav-cli、mlx-vlm-kit、
+  contrast-guard、facet、reel-kit、lite-browser 一堆东西，用户为了用上全套能力
+  已经要付 6 种安装方式的代价（npm / pipx / brew / curl）。如果网关自己还得
+  `npm i -g` 或 `npx -y`，等于在最前面再加一道 Node + npm + registry 网络的门槛 ——
+  而它本该是**把门槛降到一条命令**的那一层。多数用户会卡在起手第一步。
+- **npm 上那个 `cs-mcp` 包标记为不维护**（`npm deprecate`），不再更新；它同时占住
+  名字，避免被第三方抢注后老用户 `npx -y cs-mcp` 拉到别人的包。
+- **发布流水线改成交叉编译**：tag `v*` → macOS(arm64/x64) / Linux(x64/arm64)
+  四个平台的单文件二进制 → 挂到 GitHub Release → 回调业务中台发卡片。npm 发布
+  workflow 与 `pub` 脚本整体拆掉。
+- **新增 `cs-mcp --version`**：MCP server 一直是 stdio 服务、没有版本输出，
+  装完没法确认装好没有；现在二进制与 node 两条路径都能自报版本。
+- **新增 MCP server manifest（`server.json`）**：按官方 2025-07-09 schema 描述
+  本 server（stdio 传输、github-releases 分发、版本与仓库信息），供 MCP 生态发现。
+- **二进制与 node 路径共用同一套协议冒烟**：`test-mcp.mjs` 支持 `CS_MCP_BIN=`
+  指向二进制，CI 两条路径都要过 initialize + tools/list。版本号改为编译期快照
+  （`src/version.ts`，构建前断言与 package.json 一致）—— 原来运行时读
+  package.json，在二进制里必然 ENOENT。
+
 ## 3.1.0 (2026-10-25)
 
 ### 🚀 对外生态大扩容：接入 writing（表达门禁）与 scorecard（开源质检）

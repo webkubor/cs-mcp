@@ -7,10 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/v/cs-mcp?style=for-the-badge&color=3fb950&logo=npm&label=npm" alt="npm" /></a>
-  <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/dm/cs-mcp?style=for-the-badge&color=6d7f9c&label=downloads" alt="downloads" /></a>
+  <a href="https://github.com/webkubor/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/webkubor/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
   <img src="https://img.shields.io/badge/tools-49-4d6bfe?style=for-the-badge" alt="tools" />
-  <img src="https://img.shields.io/badge/runtime_deps-2-5A9E6F?style=for-the-badge" alt="deps" />
+  <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
 </p>
@@ -28,7 +28,7 @@ a pile of tools you didn't ask for:
 
 | | `cs mcp serve` (built into CortexOS) | **This repo, cs-mcp** |
 |---|---|---|
-| Form | Go, a `cs` subcommand | TypeScript, standalone npm package |
+| Form | Go, a `cs` subcommand | TypeScript, single self-contained binary (or run from source) |
 | Server name | `cortexos` | `cs` |
 | Covers | **System context**: rules / skills / knowledge search / CLI ledger / agent context | **Toolchain multiplexing**: the CLI capabilities of open-source projects |
 | Source of truth | `cli-registry.json` + `docs/rules` + `skills` | each project's own CLI |
@@ -96,27 +96,42 @@ CS_MCP_GROUPS=-museav          # default set minus these
 
 ## ⚡ Quickstart
 
-> ⚠️ **3.0.0 is not on npm yet** (both `cs-mcp` — unpublished 2025-04-25 — and `museav-mcp` — unpublished
-> 2026-10-05 — are currently free names but not live packages). Until it is published, use the
-> "from a local clone" path below; `npx -y cs-mcp` only becomes true once 3.0.0 ships.
+**Install (one command — no Node, no npm needed):**
 
 ```bash
-npm i -g museav-cli                    # install whichever CLI you want a group for
+curl -fsSL https://raw.githubusercontent.com/webkubor/cs-mcp/main/install.sh | bash
 ```
 
-Once published:
+The installer prints its own version (`cs-mcp --version`) and how to wire it up:
 
 ```bash
-claude mcp add cs -- npx -y cs-mcp
+claude mcp add cs -- ~/.local/bin/cs-mcp
 ```
 
-Working today (from a local clone):
+> **Why not `npx -y cs-mcp`**: this gateway wraps museav-cli, mlx-vlm-kit,
+> contrast-guard, facet, reel-kit and lite-browser — users already pay for six
+> different install mechanisms (npm / pipx / brew / curl) to get the full set.
+> If the gateway itself needs `npm i -g` or `npx -y`, that adds a Node + npm +
+> registry-network hurdle in front of everything else, when the whole point of
+> this layer is to *lower* the bar to one command. Most people never get past
+> step one. (The `cs-mcp` package on npm is marked unmaintained and will not be
+> updated.)
+
+**Install whichever CLI you want a group for** — a group's tools appear only when its CLI is installed:
+
+```bash
+npm i -g museav-cli                    # the generation group
+```
+
+**From source** (working on this repo, or if you'd rather not download a binary):
 
 ```bash
 git clone https://github.com/webkubor/cs-mcp && cd cs-mcp
 pnpm install && pnpm build
 claude mcp add cs -- node "$PWD/dist/index.js"
 ```
+
+> Windows has no one-liner yet — use WSL or the from-source path.
 
 ## Tools (43)
 

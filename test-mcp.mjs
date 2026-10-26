@@ -144,13 +144,21 @@ const META_TOOL = "groups_list";   // 发现面，不属于任何分组，唯一
 }
 
 // 起一个 server，跑一轮 initialize + tools/list。
+//
+// CS_MCP_BIN=<path> 时起二进制而不是 node dist/index.js ——
+// 单文件二进制是**主分发形态**，它必须过同一套协议冒烟：
+// JSON-RPC 握手、initialize 应答、tools/list 列出工具，一个都不能少。
+// 「node 那条能跑、二进制那条没跑过」等于二进制没被验过。
+const BIN = process.env.CS_MCP_BIN;
 function listTools(env) {
   return new Promise((resolve, reject) => {
-    const child = spawn("node", ["dist/index.js"], {
-      cwd: dirname(fileURLToPath(import.meta.url)),
-      env,
-      stdio: ["pipe", "pipe", "inherit"],
-    });
+    const child = BIN
+      ? spawn(BIN, [], { cwd: dirname(fileURLToPath(import.meta.url)), env, stdio: ["pipe", "pipe", "inherit"] })
+      : spawn("node", ["dist/index.js"], {
+          cwd: dirname(fileURLToPath(import.meta.url)),
+          env,
+          stdio: ["pipe", "pipe", "inherit"],
+        });
     const rl = createInterface({ input: child.stdout });
     const bail = setTimeout(() => {
       child.kill();

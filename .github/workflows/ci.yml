@@ -7,20 +7,55 @@ on:
     branches: [main]
 
 jobs:
-  typecheck:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+          cache: pnpm
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - run: pnpm install --frozen-lockfile
+
+      # 三道契约门禁：发版前要过，日常提交也该过 ——
+      # 「发版那天才第一次发现 README 首屏不合规」等于门禁没门禁
+      - name: 契约门禁
+        run: |
+          node scripts/prepublish-gate.mjs
+          node scripts/readme-gate.mjs
+          node scripts/version-sync-gate.mjs
+
       - run: npx tsc --noEmit
       - run: pnpm build
-      # 冒烟：MCP server 是 stdio 服务，没有 --version/--help 可查，
-      # 只能真起一次 server 走 initialize + tools/list（test-mcp.mjs 干这个）
+
+      # 冒烟：MCP server 是 stdio 服务，只能真起一次 server 走
+      # initialize + tools/list（test-mcp.mjs 干这个）
       - run: node test-mcp.mjs
+
+      # 二进制是**主分发形态** —— 它必须过同一套协议冒烟。
+      # 「node 那条能跑、二进制那条没跑过」等于二进制没被验过。
+      - name: 构建二进制
+        run: node scripts/build-binary.mjs
+
+      - name: 冒烟（二进制路径）
+        run: CS_MCP_BIN="$PWD/dist/cs-mcp" node test-mcp.mjs
+
+      - name: 版本自证
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          GOT=$(./dist/cs-mcp --version)
+          if [ "$GOT" != "$VERSION" ]; then
+            echo "::error::二进制自报版本 $GOT，与 package.json 的 $VERSION 不一致"
+            exit 1
+          fi
+          echo "✓ 二进制自报版本 $GOT"

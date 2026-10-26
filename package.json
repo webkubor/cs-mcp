@@ -1,6 +1,6 @@
 {
   "name": "cs-mcp",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "MCP server — CS 系统（CortexOS）的对外开源工具链网关：把 owner 个人开源工具链与技能串成一张网，按「能力分组」组织。装了哪个 CLI 就自动长出哪组工具。49 个工具，8 个能力分组，能力在 CLI/Skill 里，MCP 只做串联。",
   "type": "module",
   "bin": {
@@ -11,9 +11,10 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
-    "prepublishOnly": "pnpm build && node scripts/prepublish-gate.mjs && node scripts/readme-gate.mjs && node scripts/version-sync-gate.mjs",
+    "prepublishOnly": "pnpm check",
     "test": "node test-mcp.mjs",
-    "pub": "cs kyvault run --env TOKEN=secret://npm/webkubor-publish -- sh -c 'npm publish --access public --//registry.npmjs.org/:_authToken=\"$TOKEN\"'"
+    "build:binary": "node scripts/build-binary.mjs",
+    "check": "node scripts/prepublish-gate.mjs && node scripts/readme-gate.mjs && node scripts/version-sync-gate.mjs && npx tsc --noEmit && pnpm build && node test-mcp.mjs"
   },
   "engines": {
     "node": ">=20.19"

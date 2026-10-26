@@ -46,7 +46,7 @@
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { readFileSync } from "node:fs";
+import { VERSION } from "./version.js";
 import {
   GROUPS,
   GROUPS_ENV,
@@ -56,10 +56,10 @@ import {
   registerGroupsMeta,
 } from "./registry.js";
 
-// 版本从 package.json 读 —— 原先写死在代码里，包已发到 2.x 时 server 还自称 1.1.0
-const pkg = JSON.parse(
-  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-) as { version: string };
+// 版本号来自编译期副本（见 src/version.ts 的注释）：单文件二进制运行时读不到
+// package.json，编译期注入在 bun 1.4.0 上又静默失效，所以用「提交进仓 +
+// 门禁对齐」的模式，node 直跑与二进制两条路径共用同一个值。
+const pkgVersion = VERSION;
 
 // 只读一次：selection / groups_list / 启动告警三处共用同一个判定，
 // 各自 resolve 会出现「报的字和实际用的值不是一回事」。
@@ -67,7 +67,7 @@ const groupsSpec = resolveGroupsSpec();
 const selection = selectGroups(groupsSpec.spec);
 
 const server = new McpServer(
-  { name: "cs-mcp", version: pkg.version },
+  { name: "cs-mcp", version: pkgVersion },
   {
     instructions:
       "这是 CS 系统（CortexOS）的 MCP —— owner 个人工具链的串联层，按「能力分组」组织，" +
@@ -97,6 +97,16 @@ function startupLine(): string {
 }
 
 async function main() {
+  // --version：装完能自证装对了。
+  //
+  // 为什么需要：cs-mcp 是 stdio 服务，正常启动会一直等客户端的 JSON-RPC，
+  // 没有版本输出就没法「跑一下看看装好没有」。分发形态是一个二进制 +
+  // 一条安装命令（install.sh），装完第一步就该有个能立刻看到结果的检查。
+  // MCP server 没有 --version 是个长期缺口（CI 里为此专门写了冒烟注释）。
+  if (process.argv.includes("--version") || process.argv.includes("-v")) {
+    process.stdout.write(`${pkgVersion}\n`);
+    return;
+  }
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write(startupLine() + "\n");
