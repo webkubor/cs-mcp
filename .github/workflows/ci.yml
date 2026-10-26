@@ -27,16 +27,19 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: npx tsc --noEmit
+      - run: pnpm build
+
       # 三道契约门禁：发版前要过，日常提交也该过 ——
-      # 「发版那天才第一次发现 README 首屏不合规」等于门禁没门禁
+      # 「发版那天才第一次发现 README 首屏不合规」等于门禁没门禁。
+      # 顺序有讲究：**必须先 build 再验门禁** —— prepublish-gate 验的是
+      # 「package.json 承诺的 tarball 内容是不是真的在」（dist/ 在不在、
+      # 入口文件有没有），dist/ 还没编出来时它当然说「不满足」。
       - name: 契约门禁
         run: |
           node scripts/prepublish-gate.mjs
           node scripts/readme-gate.mjs
           node scripts/version-sync-gate.mjs
-
-      - run: npx tsc --noEmit
-      - run: pnpm build
 
       # 冒烟：MCP server 是 stdio 服务，只能真起一次 server 走
       # initialize + tools/list（test-mcp.mjs 干这个）

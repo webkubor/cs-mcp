@@ -44,19 +44,22 @@ jobs:
       - name: 安装依赖
         run: pnpm install --frozen-lockfile
 
-      # 三道契约门禁（prepublish / readme / version-sync）——
-      # 与原来 npm 发布时跑的是同一套，一个都不许少
-      - name: 发版契约门禁
-        run: |
-          node scripts/prepublish-gate.mjs
-          node scripts/readme-gate.mjs
-          node scripts/version-sync-gate.mjs
-
       - name: 类型检查
         run: npx tsc --noEmit
 
       - name: 构建（node 路径）
         run: pnpm build
+
+      # 三道契约门禁（prepublish / readme / version-sync）——
+      # 与原来 npm 发布时跑的是同一套，一个都不许少。
+      # 顺序：**先 build 再验门禁** —— prepublish-gate 验的是「package.json
+      # 承诺的 tarball 内容是不是真的在」（dist/ 在不在、入口文件有没有），
+      # dist/ 还没编出来时它当然说「不满足」。
+      - name: 发版契约门禁
+        run: |
+          node scripts/prepublish-gate.mjs
+          node scripts/readme-gate.mjs
+          node scripts/version-sync-gate.mjs
 
       - name: 冒烟（node 路径）
         run: node test-mcp.mjs
