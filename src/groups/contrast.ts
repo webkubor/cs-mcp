@@ -85,7 +85,7 @@ export const contrastGroup: CapabilityGroup = {
   id: "contrast",
   title: "前端视觉与对比度门禁",
   project: "frontend-contrast-guard",
-  homepage: "https://github.com/webkubor/contrast-guard",
+  homepage: "https://github.com/webkubor/frontend-contrast-guard",
   summary:
     "静态查色值配对、渲染后量实际字号/灰阶/动效、存基线与基线对比（原 contrast-guard，现升级为 frontend-contrast-guard）。" +
     "「丑的每一处单看往往都『对』」，所以 check 与 measure 分工，别只跑一个。",
