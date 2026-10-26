@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/v/cs-mcp?style=for-the-badge&color=3fb950&logo=npm&label=npm" alt="npm" /></a>
   <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/dm/cs-mcp?style=for-the-badge&color=6d7f9c&label=downloads" alt="downloads" /></a>
-  <img src="https://img.shields.io/badge/tools-43-4d6bfe?style=for-the-badge" alt="tools" />
+  <img src="https://img.shields.io/badge/tools-49-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-2-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
@@ -32,10 +32,10 @@ a pile of tools you didn't ask for:
 | Server name | `cortexos` | `cs` |
 | Covers | **System context**: rules / skills / knowledge search / CLI ledger / agent context | **Toolchain multiplexing**: the CLI capabilities of open-source projects |
 | Source of truth | `cli-registry.json` + `docs/rules` + `skills` | each project's own CLI |
-| Size | 11 read-only discovery tools | 43 tools across 6 capability groups |
+| Size | 11 read-only discovery tools | 49 tools across 8 capability groups |
 
 One line: **"what rules and skills does the cs system have" → `cs mcp serve`; "generate an image, typeset
-Markdown to PDF, drive a real browser" → cs-mcp.**
+Markdown to PDF, drive a real browser, audit open-source projects, de-AI writing" → cs-mcp.**
 
 > For the record: **agents generally don't need MCP at all.** Anything that can run Bash should just call
 > the `cs` CLI — that's the main road, and it reaches remote machines where an MCP over stdio cannot.
@@ -67,11 +67,13 @@ returned as paths — no base64.
 | `contrast` | local | [contrast-guard](https://github.com/webkubor/contrast-guard) | 3 | Contrast gating: static colour-pair check, rendered measurement, baselines | `contrast-guard` |
 | `facet` | local | [@webkubor/facet](https://github.com/webkubor/facet) | 2 | Typeset Markdown into PDF / long image / slide deck | `facet` |
 | `reel` | local | [@kubor/reel-kit](https://github.com/webkubor/reel-kit) | 3 | Assets + per-line copy → vertical video (templates / transitions / BGM / optional voice-over) | `reel` + **ffmpeg** |
-| `browser` | local | [lite-browser](https://github.com/webkubor/lite-browser) | 13 | Real Chrome: open / snapshot / click / type / screenshot / JS eval + a **human hand-off protocol** + multi-agent session isolation | `lite-browser` |
+| `browser` | local | [ego-browser](https://lite.ego.app) | 13 | Real Chrome: open / snapshot / click / type / screenshot / JS eval + a **human hand-off protocol** + multi-agent session isolation | `ego-browser` |
+| `scorecard` | local/cloud | [scorecard](https://github.com/webkubor/scorecard) | 3 | Open-source maturity & brand auditing: GitHub / npm / web 9-dimension checks + GEO visibility | `scorecard` |
+| `writing` | local | [writing-standard-skills](https://github.com/webkubor/writing-standard-skills) | 3 | Anti-AI static linter, Xiaohongshu/X/Reddit/Juejin feed deduction rubrics, 5D atomic matrix composer | zero-dep (built-in) |
 | — | built in | this MCP | 1 | `groups_list`: every group, what to install, why one is off | none |
 
-Exactly one of the six is a **cloud** group: `museav` needs a login, a network, a balance and money.
-The other five are offline, deterministic computation. That split is readable straight off the tool names —
+Exactly one of the eight is a **cloud** group: `museav` needs a login, a network, a balance and money.
+The other seven are offline, deterministic computation. That split is readable straight off the tool names —
 **all 17 cloud tools carry the `museav_` prefix.**
 
 **The default strategy is probing**: a group's tools are registered only if its CLI is on `PATH`.
@@ -196,10 +198,9 @@ snippets, including how to pass `CS_MCP_GROUPS` through `env`.
 
 | Project | Why not |
 |---|---|
-| [scorecard](https://github.com/webkubor/scorecard) | The repo has a CLI, but the `scorecard` npm name is held by an **unrelated stale package** — `npm i -g scorecard` doesn't install it |
 | [kyvault](https://github.com/webkubor/kyvault) | A **secret store**; `get` prints plaintext. That class of capability never belongs in a public MCP |
 | [voxflow](https://github.com/webkubor/voxflow) | Clear tool surface, heavy environment (local TTS models ~2.9GB) — better as its own group later |
-| [trend-radar](https://github.com/webkubor/trend-radar) / [path-guard](https://github.com/webkubor/path-guard) / [tombstone-reaper](https://github.com/webkubor/tombstone-reaper-skill) | Good capability, but **no installable CLI** yet |
+| [trend-radar](https://github.com/webkubor/trend-radar) / [path-guard](https://github.com/webkubor/path-guard) / [deadcode-reaper-skill](https://github.com/webkubor/deadcode-reaper-skill) | Good capability, currently repo scripts or agent skills, waiting for standalone CLI packages |
 
 **Adding a group** takes three steps: make sure the project's CLI is installable, add a `CliSpec` in
 `src/clis.ts`, add a group file under `src/groups/` and list it in `src/registry.ts`. No business logic
@@ -209,7 +210,7 @@ goes into the MCP.
 
 ```bash
 node test-mcp.mjs      # boots the server, runs initialize + tools/list
-                       # asserts: 43 tools, every name prefixed with its group id, old env name still works
+                       # asserts: 49 tools, every name prefixed with its group id, old env name still works
 ```
 
 `CS_MCP_GROUPS=all` is how the test boots: CI has no CLIs installed, so the default probing strategy

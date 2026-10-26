@@ -29,6 +29,8 @@ import { contrastGroup } from "./groups/contrast.js";
 import { facetGroup } from "./groups/facet.js";
 import { reelGroup } from "./groups/reel.js";
 import { browserGroup } from "./groups/browser.js";
+import { scorecardGroup } from "./groups/scorecard.js";
+import { writingGroup } from "./groups/writing.js";
 
 export interface CapabilityGroup {
   /** 分组 id，也是 CS_MCP_GROUPS 里的开关名、工具名的前缀 */
@@ -55,6 +57,8 @@ export const GROUPS: CapabilityGroup[] = [
   facetGroup,
   reelGroup,
   browserGroup,
+  scorecardGroup,
+  writingGroup,
 ];
 
 // 环境变量名与开关解析住在 env.ts（叶子模块），不在这里 —— browser.ts 也
@@ -111,7 +115,7 @@ export function selectGroups(spec: string | undefined, groups: CapabilityGroup[]
     if (exclude.has(g.id)) return false;
     if (include.includes("all")) return true;
     if (include.length > 0) return include.includes(g.id);
-    return cliAvailable(g.cli!) || !g.cli; // 默认：探测式
+    return !g.cli || cliAvailable(g.cli); // 默认：探测式（无外部 CLI 的纯内置分组默认启用）
   };
 
   for (const g of groups) {

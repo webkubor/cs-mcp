@@ -121,3 +121,21 @@ export const BROWSER_CLI: CliSpec = {
   timeoutMs: 900_000,
   maxChars: 6000,
 };
+
+/**
+ * 开源项目成熟度与品牌质检（GitHub 仓库 / npm 包 / 网页 / 品牌 GEO AI 可见度）。
+ * 输出支持 JSON 与 Markdown，对齐 NIST SSDF、OpenSSF 等工程质量基线。
+ */
+export const SCORECARD_CLI: CliSpec = {
+  name: "scorecard",
+  envVar: "SCORECARD_BIN",
+  command: "scorecard",
+  purpose: "开源项目成熟度与品牌质检靠它",
+  install: "npm i -g @webkubor/scorecard@latest (或 git clone https://github.com/webkubor/scorecard.git && npm link)",
+  // 无 minVersion：scorecard --version 不认识该选项，退出码 1 且只打印帮助文本
+  timeoutMs: 300_000,
+  maxChars: 8000,
+  // 当指定 --min 时，低于基线分数会返回 exit 1，属判据退出而非调用崩溃
+  verdictExit: true,
+};
+

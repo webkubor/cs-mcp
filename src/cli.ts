@@ -99,7 +99,8 @@ export function resolveBin(spec: CliSpec): string {
 }
 
 /** 这个 CLI 现在能不能用 —— 分组自动启用的判据。不 spawn，纯查文件，快。 */
-export function cliAvailable(spec: CliSpec): boolean {
+export function cliAvailable(spec?: CliSpec): boolean {
+  if (!spec) return true;
   const env = process.env[spec.envVar];
   if (env) return existsSync(env);
   return which(spec.command) !== null;

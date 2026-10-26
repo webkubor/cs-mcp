@@ -20,7 +20,7 @@ import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
-const EXPECTED_TOOL_COUNT = 43;   // museav 17 + vlm 4 + contrast 3 + facet 2 + reel 3 + browser 13 + groups_list
+const EXPECTED_TOOL_COUNT = 49;   // museav 17 + vlm 4 + contrast 3 + facet 2 + reel 3 + browser 13 + scorecard 3 + writing 3 + groups_list
 
 // 3.0.0 之前的 17 个无前缀 museav 工具名。这些名字**不是**老用户的契约了 ——
 // museav-mcp 已于 2026-10-05 从 npm 撤下、从未面向外部发布过，没有下游要保护。

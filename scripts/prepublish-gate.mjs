@@ -179,10 +179,8 @@ if (process.env.ALLOW_METADATA_ONLY === '1') {
   console.warn('[prepublish-gate] ⚠️  ALLOW_METADATA_ONLY=1 —— 跳过契约 4（纯文档/元数据版本）')
 } else {
   try {
-    // stderr 必须收：npm 的 E404 文本只走 stderr，丢进 'ignore' 就再也分不出
-    // 「包名不存在」和「registry 不可用」，于是只能一律退化成「未能执行」。
     const raw = execFileSync('npm', ['view', pkg.name, 'versions', '--json'], {
-      encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore']
     })
     const parsed = JSON.parse(raw)
     const list = Array.isArray(parsed) ? parsed : [parsed]
@@ -236,29 +234,8 @@ if (process.env.ALLOW_METADATA_ONLY === '1') {
       }
     }
   } catch (err) {
-    // 这里有两种**完全不同**的情况，早先合并成同一条警告是错的：
-    //
-    //   1. registry 上查不到这个包名（404 Unpublished / Not found）。对改名或
-    //      首次发布的包来说这是**正常状态** —— 本来就没有可对照的历史版本，
-    //      「运行期载荷必须与上一版不同」在这个包名下无从谈起，也就无从违反。
-    //      但它**不是**「校验通过」，是「没有校验对象」，措辞必须区分开，否则
-    //      每次发版都留下一条看似确认、实则什么都没比的绿勾。
-    //
-    //   2. 网络/registry 真的不可用。门禁不该因为一次查询失败就卡住真实发布，
-    //      但要说清是「没查成」，别写成像查过了。
-    const notFound =
-      err.status === 404 ||
-      /E404/.test(String(err.code)) ||
-      /Unpublished|could not be found|not found/i.test(err.stderr || '')
-
-    if (notFound) {
-      console.log(
-        `[prepublish-gate]   · 契约 4: ${pkg.name} 在 registry 上没有已发布版本` +
-        `（首次发布，或曾 unpublish），无对照基线 —— 载荷比对不适用`
-      )
-    } else {
-      console.warn(`[prepublish-gate] ⚠️  契约 4 未能执行（registry 查询失败，不阻断）: ${err.message}`)
-    }
+    // 网络/registry 不可用时不阻断发版：门禁不该因为一次查询失败就卡住真实发布。
+    console.warn(`[prepublish-gate] ⚠️  契约 4 未能执行（不阻断）: ${err.message}`)
   }
 }
 

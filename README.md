@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/v/cs-mcp?style=for-the-badge&color=3fb950&logo=npm&label=npm" alt="npm" /></a>
   <a href="https://www.npmjs.com/package/cs-mcp"><img src="https://img.shields.io/npm/dm/cs-mcp?style=for-the-badge&color=6d7f9c&label=downloads" alt="downloads" /></a>
-  <img src="https://img.shields.io/badge/tools-43-4d6bfe?style=for-the-badge" alt="tools" />
+  <img src="https://img.shields.io/badge/tools-49-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-2-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
@@ -31,10 +31,10 @@
 | server 名 | `cortexos` | `cs` |
 | 管什么 | **系统上下文**：规则 / 技能 / 知识搜索 / CLI 台账 / Agent 上下文 | **工具链串联**：各开源项目的 CLI 能力 |
 | 真源 | `cli-registry.json` + `docs/rules` + `skills` | 各项目自己的 CLI |
-| 数量 | 11 个只读发现工具 | 43 个工具，6 个能力分组 |
+| 数量 | 11 个只读发现工具 | 49 个工具，8 个能力分组 |
 
 一句话分界：**想知道「cs 系统里有什么规矩、有什么技能」用 `cs mcp serve`；
-想「出一张图、把 Markdown 排成 PDF、开个真浏览器」用 cs-mcp。**
+想「出一张图、把 Markdown 排成 PDF、开个真浏览器、做开源质检、给文案去 AI 味」用 cs-mcp。**
 
 > 顺带一句：**Agent 侧其实不需要 MCP。** 能跑 Bash 的 Agent 直接调 `cs` CLI 就够，
 > 而且那是主干道（MCP 的通路管不到远端机器）。MCP 的价值只在**跑不了 Bash 的客户端**上。
@@ -65,10 +65,12 @@ CLI 的一次薄封装。所以 CLI 一升级，MCP 这边立刻就有新能力�
 | `contrast` | 本地 | [contrast-guard](https://github.com/webkubor/contrast-guard) | 3 | 对比度门禁：静态查色值达不达标、渲染后量实际字号灰阶、存基线与基线对比 | `contrast-guard` |
 | `facet` | 本地 | [@webkubor/facet](https://github.com/webkubor/facet) | 2 | Markdown 排版成 PDF / 长图 / 讲稿页（自带多套模板） | `facet` |
 | `reel` | 本地 | [@kubor/reel-kit](https://github.com/webkubor/reel-kit) | 3 | 素材 + 逐句文案 → 竖版成片（模板 / 转场 / 配乐 / 可选配音） | `reel` + **ffmpeg** |
-| `browser` | 本地 | [lite-browser](https://github.com/webkubor/lite-browser) | 13 | 真实 Chrome：打开/快照/点击/输入/截图/执行 JS + **人类交接协议** + 多 agent 会话隔离 | `lite-browser` |
+| `browser` | 本地 | [ego-browser](https://lite.ego.app) | 13 | 真实 Chrome：打开/快照/点击/输入/截图/执行 JS + **人类交接协议** + 多 agent 会话隔离 | `ego-browser` |
+| `scorecard` | 本地/云 | [scorecard](https://github.com/webkubor/scorecard) | 3 | 开源项目成熟度与品牌质检：GitHub / npm / 网页 9 维度审计 + GEO 品牌可见度份额 | `scorecard` |
+| `writing` | 本地 | [writing-standard-skills](https://github.com/webkubor/writing-standard-skills) | 3 | 去 AI 假人味静态门禁扫描、小红书/X/Reddit/掘金说说扣分清单、5D 原子矩阵人设合成 | 零依赖（内置） |
 | — | 自带 | 本 MCP | 1 | `groups_list`：列出全部分组、各自装什么、为什么没启用 | 无 |
 
-六组里**只有 `museav` 是在线服务**：要登录、要网络、有余额配额、会花钱；其余五组是离线确定性计算。
+八组里**只有 `museav` 是在线服务**：要登录、要网络、有余额配额、会花钱；其余七组是离线确定性计算。
 这个差别在工具面上直接可读 —— **云能力那 17 个统一带 `museav_` 前缀**。owner 的口径就一句：
 **cs 是核心，museav 是云能力。**
 
@@ -327,11 +329,10 @@ pnpm install && pnpm build     # 产物在 dist/，package.json 的 bin 指向�
 
 | 项目 | 为什么还没进 |
 |---|---|
-| [scorecard](https://github.com/webkubor/scorecard) | 仓库里有 CLI，但 npm 上的 `scorecard` 被一个**无关的旧包**占着（tarball 里只有一个 `index.js`）。`npm i -g scorecard` 装不到它 —— 得先改名或加 scope 发布 |
 | [kyvault](https://github.com/webkubor/kyvault) | **密钥库**，`get` 会打印明文。这类能力不进公开 MCP，是红线 |
-| [voxflow](https://github.com/webkubor/voxflow) | 工具面很清晰，但环境门槛高（本地 TTS 模型约 2.9GB），适合单独一组慢慢加 |
-| [trend-radar](https://github.com/webkubor/trend-radar) / [path-guard](https://github.com/webkubor/path-guard) / [tombstone-reaper](https://github.com/webkubor/tombstone-reaper-skill) | 能力好，但**没有可安装的 CLI**：前两个仓库还没开源 / 没发布，最后一个只有仓内脚本 |
-| `im-notify-kit` / `ai-sse-kit` / `talk-skills` 等 | 纯库或纯提示词，没有命令行工具面 —— 要进得先给它们写一个 CLI |
+| [voxflow](https://github.com/webkubor/voxflow) | 工具面很清晰，但环境门槛高（本地 TTS 模型约 2.9GB），适合作为可选重型组后续加入 |
+| [trend-radar](https://github.com/webkubor/trend-radar) / [path-guard](https://github.com/webkubor/path-guard) / [deadcode-reaper-skill](https://github.com/webkubor/deadcode-reaper-skill) | 能力好，目前以仓内脚本 / Agent Skill 为主，待发布独立 CLI 包后接入 |
+| `im-notify-kit` / `ai-sse-kit` 等 | 纯库，没有独立的命令行工具面 —— 要进得先给它们写一个 CLI |
 
 **想加一组？** 三步：给那个项目确认 CLI 能装、在 `src/clis.ts` 加一份 `CliSpec`、
 在 `src/groups/` 加一个分组文件并挂到 `src/registry.ts` 的 `GROUPS`。
@@ -341,7 +342,7 @@ MCP 侧不写任何业务逻辑。
 
 ```bash
 node test-mcp.mjs      # 起 server 跑 initialize + tools/list
-                       # 断言：43 个工具；每个名字以所属分组 id 开头；旧变量名仍生效
+                       # 断言：49 个工具；每个名字以所属分组 id 开头；旧变量名仍生效
 ```
 
 `CS_MCP_GROUPS=all` 是测试用的启动方式 —— CI 机器上什么 CLI 都没装，

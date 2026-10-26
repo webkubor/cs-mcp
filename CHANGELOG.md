@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.1.0 (2026-10-25)
+
+### 🚀 对外生态大扩容：接入 writing（表达门禁）与 scorecard（开源质检）
+
+定调双轨生态边界（CortexOS 为对内私有决策与调度中枢，cs-mcp 为对外开源超级工具链网关）：
+- **新增 `writing` 能力分组（3 个工具）**：
+  - `writing_lint`：Markdown 静态去 AI 味门禁（机械拦截假人过渡词、机械排比、高中作文腔与空洞正能量结尾，逐行给出整改建议）。零外部依赖、内置开箱即用。
+  - `writing_rubric`：查询小红书、Twitter/X、Reddit、掘金的「说说/短动态」扣分清单与致命反模式（Anti-patterns）。
+  - `writing_compose`：基于 5D 原子表达组合矩阵（谁×在哪×场景×口吻）合成高信噪比人设提示词与开场骨架。
+- **新增 `scorecard` 能力分组（3 个工具）**：
+  - `scorecard_audit`：GitHub 仓库 / npm 包 / 网页可用性的 9 维度工程成熟度审计（对齐 NIST SSDF、OpenSSF）。
+  - `scorecard_compare`：双目标基准与对比审计（A/B 测试或测试 vs 线上环境比对）。
+  - `scorecard_geo`：品牌在 ChatGPT、Claude、Perplexity 等主流 AI 问答中的提及率、推荐位次与市场心智份额审计。
+- **全量工具数从 43 扩展至 49**，全量能力组从 6 组扩容至 8 组。
+- **修复**：`cliAvailable` 短路求值逻辑，确保无外部 CLI 依赖的纯内置分组（如 `writing`）在探测式模式下默认无缝启用。
+
 ## 3.0.0 (2026-10-13)
 
 ### 正名：museav-mcp → cs-mcp。它是 cs 的，不是 museav 的
