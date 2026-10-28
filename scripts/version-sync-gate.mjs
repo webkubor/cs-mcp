@@ -82,10 +82,22 @@ if (existsSync(ledger)) {
   let idx = -1
   for (let i = 0; i < lines.length; i++) { if (rowRe.test(lines[i])) { idx = i; break } }
   if (idx < 0) {
-    errors.push(
-      `台账 ${ledger} 里没有 ${pkg.name} 对应行（判据：以 | [\`${fileName}/` + '` 开头的表格行）。\n' +
-      `  → 该插件未登记进分类台账，或台账是老式 markdown 列表而非表格。发版后台账仍会是空的/旧的，先补登记。`
-    )
+    // 台账整体是不是「版本表格」？不是的话，契约 A 对这个仓**不适用** ——
+    // 那种台账是组件清单（`- **\`pkg/\`**：说明」），本来就没有版本列可同步。
+    // 2026-10-28 之前这里一律报「没登记 → 拦」，于是 museav-cli 这种仓一装这道门禁
+    // 就永久 exit 1、发版直接卡死 —— 实际它压根没有需要同步的版本号
+    // （无 SKILL.md、台账行不带版本）。
+    // 「台账没有版本列」与「该仓漏登记进台账」是两回事，必须分开判。
+    const tableRows = lines.filter(l => /^\|.*\|/.test(l.trim()) && l.trim().length > 2)
+    if (tableRows.length === 0) {
+      // 台账不是表格格式 → 契约 A 不适用，跳过（不算失败）
+      console.log(`[${NAME}] · 台账 ${ledger} 不是版本表格格式（无表格行）—— 契约 A 不适用，跳过`)
+    } else {
+      errors.push(
+        `台账 ${ledger} 里没有 ${pkg.name} 对应行（判据：以 | [\`${fileName}/` + '` 开头的表格行）。\n' +
+        `  → 该插件未登记进分类台账，或台账是老式 markdown 列表而非表格。发版后台账仍会是空的/旧的，先补登记。`
+      )
+    }
   } else {
     const row = lines[idx]
     // 按表格单元拆分：| a | b | ... | → ["a","b",...]。单元内可能含 `code`、加粗、链接。
