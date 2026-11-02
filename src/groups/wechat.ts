@@ -86,9 +86,10 @@ export function registerWechat(server: McpServer): number {
 
   server.tool(
     "wechat_decrypt",
-    "解密本机微信数据库到本地缓存（查询的前置步骤）。" +
-      "需要该账号的数据库密钥；密钥缺失时本工具会说明怎么补。" +
-      "首次解密数据量大，允许几分钟；日常更新用增量模式更快。",
+    "解密本机微信数据库到本地缓存（可选加速步骤）。" +
+      "注意：密钥就位后 query/sessions/search/contacts 可直接读加密库，**无需先解密**；" +
+      "decrypt 的价值是把库解到本地缓存，重复查询/大批量扫描时更快。" +
+      "需要该账号的数据库密钥；密钥缺失时本工具会说明怎么补。",
     {
       account: z.string().optional().describe("账号目录名或 base account id；不传则自动选择"),
       incremental: z.boolean().optional().describe("true=增量解密（只处理变化的文件），推荐日常使用"),
