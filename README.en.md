@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/webkubor/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/webkubor/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
-  <img src="https://img.shields.io/badge/tools-49-4d6bfe?style=for-the-badge" alt="tools" />
+  <img src="https://img.shields.io/badge/tools-55-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
@@ -32,7 +32,7 @@ a pile of tools you didn't ask for:
 | Server name | `cortexos` | `cs` |
 | Covers | **System context**: rules / skills / knowledge search / CLI ledger / agent context | **Toolchain multiplexing**: the CLI capabilities of open-source projects |
 | Source of truth | `cli-registry.json` + `docs/rules` + `skills` | each project's own CLI |
-| Size | 11 read-only discovery tools | 49 tools across 8 capability groups |
+| Size | 11 read-only discovery tools | 55 tools across 9 capability groups |
 
 One line: **"what rules and skills does the cs system have" → `cs mcp serve`; "generate an image, typeset
 Markdown to PDF, drive a real browser, audit open-source projects, de-AI writing" → cs-mcp.**
@@ -70,11 +70,12 @@ returned as paths — no base64.
 | `browser` | local | [ego-browser](https://lite.ego.app) | 13 | Real Chrome: open / snapshot / click / type / screenshot / JS eval + a **human hand-off protocol** + multi-agent session isolation | `ego-browser` |
 | `scorecard` | local/cloud | [scorecard](https://github.com/webkubor/scorecard) | 3 | Open-source maturity & brand auditing: GitHub / npm / web 9-dimension checks + GEO visibility | `scorecard` |
 | `writing` | local | [writing-standard-skills](https://github.com/webkubor/writing-standard-skills) | 3 | Anti-AI static linter, Xiaohongshu/X/Reddit/Juejin feed deduction rubrics, 5D atomic matrix composer | zero-dep (built-in) |
+| `wechat` | local Mac | [wx-cli](https://github.com/pandorafuture/wx-cli) | 6 | Local WeChat sessions, contacts, messages and full-text search; database stays on this Mac | `wx-cli` + local WeChat database key |
 | — | built in | this MCP | 1 | `groups_list`: every group, what to install, why one is off | none |
 
-Exactly one of the eight is a **cloud** group: `museav` needs a login, a network, a balance and money.
-The other seven are offline, deterministic computation. That split is readable straight off the tool names —
-**all 17 cloud tools carry the `museav_` prefix.**
+Exactly one of the nine groups is a **cloud** group: `museav` needs a login, a network, a balance and money.
+`wechat` reads private local WeChat data on this Mac. The other seven groups run local tools.
+**All 17 cloud tools carry the `museav_` prefix.**
 
 **The default strategy is probing**: a group's tools are registered only if its CLI is on `PATH`.
 Tool schemas ship with *every* model request, and an aggregator only grows — users shouldn't pay tokens
@@ -126,7 +127,7 @@ npm i -g museav-cli                    # the generation group
 **From source** (working on this repo, or if you'd rather not download a binary):
 
 ```bash
-git clone https://github.com/webkubor/cs-mcp && cd cs-mcp
+git clone git@github.com:webkubor/cs-mcp && cd cs-mcp
 pnpm install && pnpm build
 claude mcp add cs -- node "$PWD/dist/index.js"
 ```
@@ -209,6 +210,26 @@ Point at executables outside the global PATH with `MUSEAV_BIN`, `MLX_VLM_BIN`, `
 See the [Chinese README](README.md#接到-agent-上) for the full Claude Code / DSH / any-MCP-client config
 snippets, including how to pass `CS_MCP_GROUPS` through `env`.
 
+## Local WeChat access (`wechat`, macOS only)
+
+Install [wx-cli](https://github.com/pandorafuture/wx-cli) on the **same Mac** that runs cs-mcp.
+The `wechat` group appears automatically when `wx-cli` is on `PATH`. Start with `wechat_status`.
+You need a database key; upstream's `wx-cli key extract` requires disabling macOS SIP and restarting WeChat,
+so cs-mcp deliberately does not expose that operation. Once a key is available, run `wechat_decrypt`
+and then use `wechat_sessions`, `wechat_contacts`, `wechat_messages`, or `wechat_search`.
+Search does **not** honour wx-cli's hidden-contact rules and may return hidden conversations.
+Do not send chat contents to external services.
+
+A local Hermes agent can use the same cs-mcp instance by adding this under `mcp_servers`
+in `~/.hermes/config.yaml` and restarting its session:
+
+```yaml
+  cs:
+    command: node
+    args:
+      - /absolute/path/to/cs-mcp/dist/index.js
+```
+
 ## Not in yet (and why)
 
 | Project | Why not |
@@ -225,7 +246,7 @@ goes into the MCP.
 
 ```bash
 node test-mcp.mjs      # boots the server, runs initialize + tools/list
-                       # asserts: 49 tools, every name prefixed with its group id, old env name still works
+                       # asserts: 55 tools, every name prefixed with its group id, old env name still works
 ```
 
 `CS_MCP_GROUPS=all` is how the test boots: CI has no CLIs installed, so the default probing strategy

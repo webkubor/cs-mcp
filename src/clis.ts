@@ -127,6 +127,34 @@ export const BROWSER_CLI: CliSpec = {
 };
 
 /**
+ * 微信本地数据读取（会话 / 联系人 / 消息 / 全文搜索）。
+ *
+ * macOS + Apple Silicon only，且**只读本机**：它读的是这台 Mac 上 WeChat 的
+ * 数据库，数据不上传、不依赖云端导出。
+ *
+ * 两个前置是这个分组能不能真跑起来的分水岭，工具描述里必须写清：
+ *  1. **数据库密钥**：CLI 需要 64 位 hex 密钥才能解密本机微信库。密钥可由
+ *     `wx-cli key extract`（LLDB 捕获 PBKDF2，**要求 SIP 已关闭**）取得，
+ *     或用 `wx-cli key set <account> <key>` 手动录入。
+ *  2. **解密缓存**：查之前要先 `wx-cli decrypt`（本组提供 wechat_decrypt 工具）。
+ *
+ * 本 MCP **不暴露** key extract —— 关 SIP 属于改系统安全边界、要重启、
+ * 是 owner 自己的决定，不该由 agent 触发。MCP 只做串联，不代替 owner 做这件事。
+ */
+export const WX_CLI: CliSpec = {
+  name: "wx-cli",
+  envVar: "WX_CLI_BIN",
+  command: "wx-cli",
+  purpose: "读本机微信数据（会话/联系人/消息/全文搜索）靠它",
+  install:
+    "从 https://github.com/pandorafuture/wx-cli/releases/latest 下 macos-arm64 二进制到 ~/.local/bin（wx-cli --version 验证）",
+  // 无 minVersion：0.7.4 的 --version 能正常返回版本号，但没有确立的下限，
+  // 填一个未经确认的号会把可用环境挡在门外。
+  timeoutMs: 180_000,
+  maxChars: 8000,
+};
+
+/**
  * 开源项目成熟度与品牌质检（GitHub 仓库 / npm 包 / 网页 / 品牌 GEO AI 可见度）。
  * 输出支持 JSON 与 Markdown，对齐 NIST SSDF、OpenSSF 等工程质量基线。
  */

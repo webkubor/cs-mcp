@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/webkubor/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/webkubor/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
-  <img src="https://img.shields.io/badge/tools-49-4d6bfe?style=for-the-badge" alt="tools" />
+  <img src="https://img.shields.io/badge/tools-55-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
   <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
@@ -31,7 +31,7 @@
 | server 名 | `cortexos` | `cs` |
 | 管什么 | **系统上下文**：规则 / 技能 / 知识搜索 / CLI 台账 / Agent 上下文 | **工具链串联**：各开源项目的 CLI 能力 |
 | 真源 | `cli-registry.json` + `docs/rules` + `skills` | 各项目自己的 CLI |
-| 数量 | 11 个只读发现工具 | 49 个工具，8 个能力分组 |
+| 数量 | 11 个只读发现工具 | 55 个工具，9 个能力分组 |
 
 一句话分界：**想知道「cs 系统里有什么规矩、有什么技能」用 `cs mcp serve`；
 想「出一张图、把 Markdown 排成 PDF、开个真浏览器、做开源质检、给文案去 AI 味」用 cs-mcp。**
@@ -68,9 +68,10 @@ CLI 的一次薄封装。所以 CLI 一升级，MCP 这边立刻就有新能力�
 | `browser` | 本地 | [ego-browser](https://lite.ego.app) | 13 | 真实 Chrome：打开/快照/点击/输入/截图/执行 JS + **人类交接协议** + 多 agent 会话隔离 | `ego-browser` |
 | `scorecard` | 本地/云 | [scorecard](https://github.com/webkubor/scorecard) | 3 | 开源项目成熟度与品牌质检：GitHub / npm / 网页 9 维度审计 + GEO 品牌可见度份额 | `scorecard` |
 | `writing` | 本地 | [writing-standard-skills](https://github.com/webkubor/writing-standard-skills) | 3 | 去 AI 假人味静态门禁扫描、小红书/X/Reddit/掘金说说扣分清单、5D 原子矩阵人设合成 | 零依赖（内置） |
+| `wechat` | 本机 Mac | [wx-cli](https://github.com/pandorafuture/wx-cli) | 6 | 微信会话、联系人、聊天消息、全文搜索；数据库留在这台 Mac | `wx-cli` + 本机微信数据库密钥 |
 | — | 自带 | 本 MCP | 1 | `groups_list`：列出全部分组、各自装什么、为什么没启用 | 无 |
 
-八组里**只有 `museav` 是在线服务**：要登录、要网络、有余额配额、会花钱；其余七组是离线确定性计算。
+九组里**只有 `museav` 是在线服务**：要登录、要网络、有余额配额、会花钱；`wechat` 是这台 Mac 的本地微信数据读取能力（真实聊天内容属于私有数据）。其余七组是本地工具。
 这个差别在工具面上直接可读 —— **云能力那 17 个统一带 `museav_` 前缀**。owner 的口径就一句：
 **cs 是核心，museav 是云能力。**
 
@@ -121,7 +122,7 @@ npm i -g museav-cli                    # 这一行是出图那组
 **从源码起**（改这个仓、或不想下二进制）：
 
 ```bash
-git clone https://github.com/webkubor/cs-mcp && cd cs-mcp
+git clone git@github.com:webkubor/cs-mcp && cd cs-mcp
 pnpm install && pnpm build
 claude mcp add cs -- node "$PWD/dist/index.js"
 ```
@@ -326,6 +327,31 @@ DSH 在 profile 的 `cordis.patch.yml` 里加一行：
 }
 ```
 
+### 本机微信读取：`wechat`（Mac 专用）
+
+本组包装 [wx-cli](https://github.com/pandorafuture/wx-cli) 的六个本地命令：`wechat_status`、
+`wechat_decrypt`、`wechat_sessions`、`wechat_contacts`、`wechat_messages`、`wechat_search`。
+把 `wx-cli` 安装在运行 cs-mcp 的**那台 Mac** 的 `PATH` 上，分组就会自动出现。
+Agent 只读到**同一台 Mac 的微信库**，跨机器的 MCP 客户端如果在各自机器启动 cs-mcp，
+读到的也是各自机器的库；不会把 owner 的微信数据从 Mac 传到服务器。
+
+首次使用先调用 `wechat_status`。CLI 需要数据库密钥；上游的 `wx-cli key extract`
+要求关闭 macOS SIP 并重启微信，这是 owner 本人的系统设置选择，本 MCP 不提供该操作。
+有密钥后调用 `wechat_decrypt` 生成本地缓存，再用其他四个工具查。所有查询结果
+都是真实私人聊天内容；`wechat_search` **不套用** wx-cli 的联系人隐藏规则，
+可能搜到隐藏联系人，使用时要留意。
+
+本机 Hermes 也可直接挂同一份 cs-mcp，`~/.hermes/config.yaml` 的 `mcp_servers` 下增加：
+
+```yaml
+  cs:
+    command: node
+    args:
+      - /绝对路径/cs-mcp/dist/index.js
+```
+
+配置改完后重启 Hermes 会话，再用 `groups_list` / `wechat_status` 验证。
+
 ### 本地开发（改这个仓库时）
 
 ```bash
@@ -353,7 +379,7 @@ MCP 侧不写任何业务逻辑。
 
 ```bash
 node test-mcp.mjs      # 起 server 跑 initialize + tools/list
-                       # 断言：49 个工具；每个名字以所属分组 id 开头；旧变量名仍生效
+                       # 断言：55 个工具；每个名字以所属分组 id 开头；旧变量名仍生效
 ```
 
 `CS_MCP_GROUPS=all` 是测试用的启动方式 —— CI 机器上什么 CLI 都没装，

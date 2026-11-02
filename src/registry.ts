@@ -31,6 +31,7 @@ import { reelGroup } from "./groups/reel.js";
 import { browserGroup } from "./groups/browser.js";
 import { scorecardGroup } from "./groups/scorecard.js";
 import { writingGroup } from "./groups/writing.js";
+import { wechatGroup } from "./groups/wechat.js";
 
 export interface CapabilityGroup {
   /** 分组 id，也是 CS_MCP_GROUPS 里的开关名、工具名的前缀 */
@@ -59,6 +60,7 @@ export const GROUPS: CapabilityGroup[] = [
   browserGroup,
   scorecardGroup,
   writingGroup,
+  wechatGroup,
 ];
 
 // 环境变量名与开关解析住在 env.ts（叶子模块），不在这里 —— browser.ts 也
