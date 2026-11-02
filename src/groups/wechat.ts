@@ -9,9 +9,11 @@
  * wx-cli 能跑起来需要两样东西，本 MCP **只负责把它们的状态说清楚，不负责替 owner 做**：
  *
  *  1. **数据库密钥**：64 位 hex，缺了就什么都查不了。
- *     取得方式二选一：`wx-cli key extract`（LLDB 捕获 PBKDF2，**要求 SIP 已关闭**，
- *     会重启微信）或 `wx-cli key set <account> <key>` 手动录入。
- *  2. **解密缓存**：`wx-cli decrypt` 解到本地缓存目录，之后查询直接读缓存。
+ *     取得方式：`wx-cli key extract`（LLDB 捕获 PBKDF2，**要求 SIP 已关闭**，
+ *     会重启微信）、`wx-cli key scan`（扫进程内存，也要 SIP 关闭 + sudo，
+ *     但不重启微信）或 `wx-cli key set <account> <key>` 手动录入。
+ *  2. **解密缓存（可选）**：`wx-cli decrypt` 解到本地缓存目录 —— 上游明确
+ *     有完整密钥时 query/sessions/search/contacts 直读加密库，decrypt 只是加速。
  *
  * `key extract` **故意不做成本工具**：关 SIP 是改系统安全边界、要重启机器，
  * 属于 owner 自己的决定。agent 不该有触发它的能力 —— 本组提供 `wechat_status`
@@ -44,8 +46,9 @@ function explainEnvFailure(raw: string): string | null {
       "本机微信数据库没有密钥，所以还读不到任何消息 —— 这是环境未就绪，不是「没有数据」。\n" +
       "补法二选一（都要 owner 自己做）：\n" +
       "  1) wx-cli key extract   —— LLDB 捕获密钥，**要求 SIP 已关闭**，会重启微信\n" +
+      "     （另一条路 wx-cli key scan：也要 SIP 关闭 + sudo，但不重启微信）\n" +
       "  2) wx-cli key set <account> <64位hex密钥>  —— 手动录入已有密钥\n" +
-      "补完后再跑 wechat_decrypt 解密，然后查询就能用了。\n" +
+      "密钥就位后查询可直接读加密库；需要更快再跑 wechat_decrypt 建缓存。\n" +
       "原始输出：\n" + raw
     );
   }
