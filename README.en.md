@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/webkubor/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/webkubor/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
+  <a href="https://github.com/cortexos-dev/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/cortexos-dev/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
   <img src="https://img.shields.io/badge/tools-55-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
@@ -100,7 +100,7 @@ CS_MCP_GROUPS=-museav          # default set minus these
 **Install (one command — no Node, no npm needed):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/webkubor/cs-mcp/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cortexos-dev/cs-mcp/main/install.sh | bash
 ```
 
 The installer prints its own version (`cs-mcp --version`) and how to wire it up:
@@ -127,7 +127,7 @@ npm i -g museav-cli                    # the generation group
 **From source** (working on this repo, or if you'd rather not download a binary):
 
 ```bash
-git clone git@github.com:webkubor/cs-mcp && cd cs-mcp
+git clone git@github.com:cortexos-dev/cs-mcp && cd cs-mcp
 pnpm install && pnpm build
 claude mcp add cs -- node "$PWD/dist/index.js"
 ```

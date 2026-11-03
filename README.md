@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/webkubor/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/webkubor/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
+  <a href="https://github.com/cortexos-dev/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/cortexos-dev/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
   <img src="https://img.shields.io/badge/tools-55-4d6bfe?style=for-the-badge" alt="tools" />
   <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
@@ -97,7 +97,7 @@ CS_MCP_GROUPS=-museav          # 默认集里去掉这几个
 **装（一条命令，不需要 Node，也不需要 npm）：**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/webkubor/cs-mcp/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/cortexos-dev/cs-mcp/main/install.sh | bash
 ```
 
 装完会自报版本（`cs-mcp --version`），并把接法一并打出来：
@@ -122,7 +122,7 @@ npm i -g museav-cli                    # 这一行是出图那组
 **从源码起**（改这个仓、或不想下二进制）：
 
 ```bash
-git clone git@github.com:webkubor/cs-mcp && cd cs-mcp
+git clone git@github.com:cortexos-dev/cs-mcp && cd cs-mcp
 pnpm install && pnpm build
 claude mcp add cs -- node "$PWD/dist/index.js"
 ```

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # cs-mcp 安装脚本 —— 一条命令，把网关装到本机。
 #
-#   curl -fsSL https://raw.githubusercontent.com/webkubor/cs-mcp/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/cortexos-dev/cs-mcp/main/install.sh | bash
 #
 # ## 为什么是这个形态
 #
@@ -20,7 +20,7 @@
 #   Windows 走 PowerShell 那条（在 README 里），本脚本只管类 Unix。
 set -euo pipefail
 
-REPO="webkubor/cs-mcp"
+REPO="cortexos-dev/cs-mcp"
 BIN_NAME="cs-mcp"
 INSTALL_DIR="${CS_MCP_INSTALL_DIR:-$HOME/.local/bin}"
 

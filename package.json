@@ -25,11 +25,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/webkubor/cs-mcp.git"
+    "url": "git+https://github.com/cortexos-dev/cs-mcp.git"
   },
   "homepage": "https://docs.museav.top/cli/mcp",
   "bugs": {
-    "url": "https://github.com/webkubor/cs-mcp/issues"
+    "url": "https://github.com/cortexos-dev/cs-mcp/issues"
   },
   "license": "MIT",
   "keywords": [
