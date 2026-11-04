@@ -258,7 +258,7 @@ npm i -g museav-cli        # museav 组：出图 / 后期 / 素材 / SkillHub（
 pipx install git+https://github.com/webkubor/mlx-vlm-kit.git   # vlm 组
 npm i -g contrast-guard    # contrast 组
 npm i -g github:webkubor/facet   # facet 组（git 分发，不在 npm 上更新）
-npm i -g @kubor/reel-kit   # reel 组（另外要 brew install ffmpeg）
+npm i -g github:webkubor/reel-kit   # reel 组（git 分发；另外要 brew install ffmpeg）
 curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.sh | bash   # browser 组
 ```
 

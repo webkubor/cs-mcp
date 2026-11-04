@@ -100,7 +100,7 @@ export const REEL_CLI: CliSpec = {
   envVar: "REEL_BIN",
   command: "reel",
   purpose: "竖版短视频合成靠它，且需要系统里有 ffmpeg",
-  install: "npm i -g @kubor/reel-kit@latest（另外需要 ffmpeg：brew install ffmpeg）",
+  install: "npm i -g github:webkubor/reel-kit（另外需要 ffmpeg：brew install ffmpeg）",
   // 无 minVersion：reel --version 不认识这个选项，退出码 1、只打帮助文本
   timeoutMs: 900_000,
   maxChars: 4000,

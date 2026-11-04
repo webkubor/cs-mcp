@@ -192,7 +192,7 @@ npm i -g museav-cli        # museav group: generation / post-processing / assets
 pipx install git+https://github.com/webkubor/mlx-vlm-kit.git   # vlm group
 npm i -g contrast-guard    # contrast group
 npm i -g github:webkubor/facet   # facet group (git-distributed, not updated on npm)
-npm i -g @kubor/reel-kit   # reel group (plus: brew install ffmpeg)
+npm i -g github:webkubor/reel-kit   # reel group (git-distributed; plus: brew install ffmpeg)
 curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.sh | bash   # browser group
 ```
 
