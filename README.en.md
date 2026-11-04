@@ -191,7 +191,7 @@ two halves of one pipeline.
 npm i -g museav-cli        # museav group: generation / post-processing / assets / SkillHub (>= 3.9.0)
 pipx install git+https://github.com/webkubor/mlx-vlm-kit.git   # vlm group
 npm i -g contrast-guard    # contrast group
-npm i -g @webkubor/facet   # facet group
+npm i -g github:webkubor/facet   # facet group (git-distributed, not updated on npm)
 npm i -g @kubor/reel-kit   # reel group (plus: brew install ffmpeg)
 curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.sh | bash   # browser group
 ```

@@ -257,7 +257,7 @@ CLI 自带**平台资产护栏**：Skill 正文里抄了 MUSE AV 平台公共模
 npm i -g museav-cli        # museav 组：出图 / 后期 / 素材 / SkillHub（需要 >= 3.9.0）
 pipx install git+https://github.com/webkubor/mlx-vlm-kit.git   # vlm 组
 npm i -g contrast-guard    # contrast 组
-npm i -g @webkubor/facet   # facet 组
+npm i -g github:webkubor/facet   # facet 组（git 分发，不在 npm 上更新）
 npm i -g @kubor/reel-kit   # reel 组（另外要 brew install ffmpeg）
 curl -fsSL https://raw.githubusercontent.com/webkubor/lite-browser/main/install.sh | bash   # browser 组
 ```

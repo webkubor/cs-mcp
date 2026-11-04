@@ -23,7 +23,7 @@ import type { CliSpec } from "./cli.js";
  * | vlm          | 0 | `vlm 0.1.0`         | ❌ 能报版本，但没有确立的下限，填了纯属自找 |
  * | ego-browser | 0 | `ego-browser 0.5.1.13`| ❌ 同上 |
  * | contrast-guard | **2** | 空（话在 stderr：「未找到 contrast.config」） | ❌ 见下 |
- * | facet        | **1** | 空（node 内部异常栈） | ❌ 见下 |
+ * | facet        | **1** | 空（node 内部异常栈） | ❌ 见下（0.4.2 起 `--version` 正常返回 exit 0，但仍无确立下限，不填） |
  * | reel         | **1** | 打印帮助文本，**全文没有版本号** | ❌ 见下 |
  *
  * **后三个填了不是「版本误报」，是整组永久不可用。** 链路：`createRunner`
@@ -82,7 +82,7 @@ export const FACET_CLI: CliSpec = {
   name: "facet",
   envVar: "FACET_BIN",
   command: "facet",
-  install: "npm i -g @webkubor/facet@latest",
+  install: "npm i -g github:webkubor/facet",  // git 分发，不发布 npm（2026-11-04 owner 定；npm 上 0.4.1 为停更快照）
   // 无 minVersion：--version 走到 node 内部异常、退出码 1（见文件头表格）
   timeoutMs: 300_000,
   maxChars: 4000,
