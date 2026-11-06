@@ -1,18 +1,23 @@
-<h1 align="center">🧭 cs-mcp</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cortexos-dev/.github/main/brand/mark-dark.svg">
+    <img src="https://raw.githubusercontent.com/cortexos-dev/.github/main/brand/mark.svg" alt="CortexOS Logo" height="72">
+  </picture>
+</p>
+
+<h1 align="center">cs-mcp</h1>
 
 <p align="center">
-  <strong>The MCP server of CortexOS (the CS system) — one command that wires a personal toolchain into any AI agent.</strong><br>
-  Strings the CLI capabilities of several open-source projects into one network: image generation, local vision,<br>
-  contrast gating, Markdown typesetting… organised as <em>capability groups</em>. A group's tools appear only when its CLI is installed, so nothing you don't have eats your context.
+  <strong>Open-source toolchain gateway for CortexOS: discovers capabilities from installed local CLIs and exposes them over MCP.</strong><br>
+  Multiplexes CLI tools across open-source projects into capability groups.<br>
+  Tools register only when their respective CLI is installed, without consuming model context for uninstalled tools.
 </p>
 
 <p align="center">
   <a href="https://github.com/cortexos-dev/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/cortexos-dev/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
-  <img src="https://img.shields.io/badge/tools-55-4d6bfe?style=for-the-badge" alt="tools" />
-  <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
-  <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
+  <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
 </p>
 
 <p align="center">
@@ -21,44 +26,37 @@
 
 ---
 
-## ⚠️ Not to be confused with `cs mcp serve`
+## Architectural Scope: Separation from `cs mcp serve`
 
-There are **two** things called "the cs MCP". They complement each other; wiring up the wrong one gets you
-a pile of tools you didn't ask for:
+The system includes two components offering MCP channels, each with distinct responsibilities:
 
-| | `cs mcp serve` (built into CortexOS) | **This repo, cs-mcp** |
+| Aspect | `cs mcp serve` (built into CortexOS) | **This repo, cs-mcp** |
 |---|---|---|
-| Form | Go, a `cs` subcommand | TypeScript, single self-contained binary (or run from source) |
+| Implementation | Go, a `cs` subcommand | TypeScript, standalone binary (or run from source) |
 | Server name | `cortexos` | `cs` |
-| Covers | **System context**: rules / skills / knowledge search / CLI ledger / agent context | **Toolchain multiplexing**: the CLI capabilities of open-source projects |
-| Source of truth | `cli-registry.json` + `docs/rules` + `skills` | each project's own CLI |
-| Size | 11 read-only discovery tools | 55 tools across 9 capability groups |
+| Scope | **System context**: rules, skills, knowledge search, CLI registry | **Toolchain multiplexing**: capabilities exposed by open-source CLIs |
+| Source of truth | `cli-registry.json` + `docs/rules` + `skills` | Installed local CLIs |
+| Tool discovery | Built-in read-only discovery tools | Dynamic probing based on installed CLIs |
 
-One line: **"what rules and skills does the cs system have" → `cs mcp serve`; "generate an image, typeset
-Markdown to PDF, drive a real browser, audit open-source projects, de-AI writing" → cs-mcp.**
+Distinction principle: **Use `cs mcp serve` for CortexOS rules, skills, and system context; use cs-mcp to invoke image generation, Markdown typesetting, browser automation, and quality gate CLIs.**
 
-> For the record: **agents generally don't need MCP at all.** Anything that can run Bash should just call
-> the `cs` CLI — that's the main road, and it reaches remote machines where an MCP over stdio cannot.
-> MCP's value is confined to clients that **can't run Bash**.
+> Note: Environments with shell access can call the `cs` CLI directly; cs-mcp primarily serves MCP-compatible AI clients requiring a standard interface.
 
-## 🎯 Why This
+## Why cs-mcp
 
 | Need | Hand-rolled commands | SDK per tool | cs-mcp |
 |---|:---:|:---:|:---:|
-| Generation, vision, gating and typesetting in one agent | ❌ Four dialects | ❌ Wire the protocol four times | ✅ One server covers all |
-| Survives switching agents | ❌ Tied to one CLI | ⚠️ Every vendor differs | ✅ Anything that speaks MCP |
-| Tools you don't have eating context | — | ❌ Always registered | ✅ **Probing**: registered only if installed |
-| Large images / long docs in context | ❌ Handle manually | ❌ Write base64 plumbing | ✅ Absolute paths on disk |
-| Adding new capability | Remember each command | ❌ Edit the MCP | ✅ Upgrade the CLI (the MCP only multiplexes) |
+| Unified CLI capabilities | Fragmented command syntax | Multiple SDK protocols | Unified MCP interface |
+| Client interoperability | Tied to local shell environment | Vendor-specific SDK APIs | Standard MCP client compatibility |
+| Zero overhead for uninstalled tools | — | Often registered unconditionally | **Probing**: registered only when CLI is installed |
+| Local file and media handling | Manual conversion and parsing | Base64 serialization overhead | Native filesystem paths |
+| Toolchain maintenance | Ad-hoc invocation scripts | Frequent adapter updates | Upgrading the underlying CLI takes effect immediately |
 
-**The layering is strict: capability lives in the CLI, the MCP only multiplexes.** This repo implements
-nothing of its own — every tool is a thin shell over some project's CLI. Upgrade the CLI and the new
-capability shows up here immediately; nothing is re-implemented, so the two can never disagree.
+**Layering principle: Capabilities reside in CLIs; cs-mcp only handles standardization and multiplexing.** Every tool is a thin wrapper over its respective CLI, avoiding duplicated business logic and ensuring complete parity with upstream CLI behavior.
 
-Transport is stdio. Files are passed in as **absolute paths**, and results are written back to disk and
-returned as paths — no base64.
+Transport is stdio. Files are passed via **absolute paths**, and outputs are written back to disk and returned as paths, avoiding base64 encoding overhead for large files.
 
-## 🧩 Capability groups (this is the map)
+## Capability Groups
 
 | Group | Tier | Open-source project | Tools | What it does | Requires |
 |---|---|:---:|---:|---|---|
@@ -73,9 +71,8 @@ returned as paths — no base64.
 | `wechat` | local Mac | [wx-cli](https://github.com/pandorafuture/wx-cli) | 6 | Local WeChat sessions, contacts, messages and full-text search; database stays on this Mac | `wx-cli` + local WeChat database key |
 | — | built in | this MCP | 1 | `groups_list`: every group, what to install, why one is off | none |
 
-Exactly one of the nine groups is a **cloud** group: `museav` needs a login, a network, a balance and money.
-`wechat` reads private local WeChat data on this Mac. The other seven groups run local tools.
-**All 17 cloud tools carry the `museav_` prefix.**
+Among the capability groups, **`museav` is a cloud service** (requiring account login and network quota, with tools prefixed by `museav_`); `wechat` reads local WeChat data (restricted to private data on this machine); all other groups run offline local tools.
+Core principle: **cs is core, museav is cloud capability extension.**
 
 **The default strategy is probing**: a group's tools are registered only if its CLI is on `PATH`.
 Tool schemas ship with *every* model request, and an aggregator only grows — users shouldn't pay tokens

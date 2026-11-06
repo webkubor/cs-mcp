@@ -1,18 +1,22 @@
-<h1 align="center">🧭 cs-mcp</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/cortexos-dev/.github/main/brand/mark-dark.svg">
+    <img src="https://raw.githubusercontent.com/cortexos-dev/.github/main/brand/mark.svg" alt="CortexOS Logo" height="72">
+  </picture>
+</p>
+
+<h1 align="center">cs-mcp</h1>
 
 <p align="center">
-  <strong>CS 系统（CortexOS）的 MCP —— 一条命令，把个人工具链接进任意 AI Agent。</strong><br>
-  把各开源项目的 CLI 能力串成一张网：出图 / 看图 / 对比度门禁 / Markdown 排版……<br>
-  按「能力分组」组织，装了哪个 CLI 就自动长出哪组工具，没装的不会白占你的上下文。
+  <strong>CortexOS 的开源工具链网关：按已安装 CLI 发现能力，并通过 MCP 供客户端调用。</strong><br>
+  按能力分组组织开源工具链，装了哪个 CLI 就注册哪组工具，未安装不占用模型上下文。
 </p>
 
 <p align="center">
   <a href="https://github.com/cortexos-dev/cs-mcp/releases/latest"><img src="https://img.shields.io/github/v/release/cortexos-dev/cs-mcp?style=for-the-badge&color=3fb950&label=release" alt="release" /></a>
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
-  <img src="https://img.shields.io/badge/tools-55-4d6bfe?style=for-the-badge" alt="tools" />
-  <img src="https://img.shields.io/badge/runtime_deps-0-5A9E6F?style=for-the-badge" alt="deps" />
-  <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
   <img src="https://img.shields.io/badge/transport-stdio-8957e5?style=for-the-badge" alt="stdio" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-4d6bfe?style=for-the-badge" alt="platform" />
+  <img src="https://img.shields.io/badge/license-MIT-777?style=for-the-badge" alt="MIT" />
 </p>
 
 <p align="center">
@@ -21,42 +25,37 @@
 
 ---
 
-## ⚠️ 别和 `cs mcp serve` 搞混
+## 架构定位：与 `cs mcp serve` 的分工
 
-系统里有**两个**都叫「cs 的 MCP」的东西。它们互补，不重合 —— 接错的那个会得到一堆你不需要的工具：
+系统中有两个提供 MCP 通道的组件，分别承担不同职责：
 
-| | `cs mcp serve`（CortexOS 内置） | **本仓 cs-mcp** |
+| 维度 | `cs mcp serve`（CortexOS 内置） | **本仓 cs-mcp** |
 |---|---|---|
-| 形态 | Go，`cs` 的一个子命令 | TypeScript，单文件二进制（也可从源码跑） |
-| server 名 | `cortexos` | `cs` |
-| 管什么 | **系统上下文**：规则 / 技能 / 知识搜索 / CLI 台账 / Agent 上下文 | **工具链串联**：各开源项目的 CLI 能力 |
-| 真源 | `cli-registry.json` + `docs/rules` + `skills` | 各项目自己的 CLI |
-| 数量 | 11 个只读发现工具 | 55 个工具，9 个能力分组 |
+| 形态 | Go，`cs` 的子命令 | TypeScript，单文件二进制（亦可源码运行） |
+| 服务名称 | `cortexos` | `cs` |
+| 职责边界 | **系统上下文**：规则、技能、知识检索、CLI 台账 | **工具链串联**：开源项目 CLI 暴露的能力 |
+| 真实真源 | `cli-registry.json` + `docs/rules` + `skills` | 本机安装的各 CLI 工具 |
+| 工具发现 | 内置只读系统工具 | 按已安装 CLI 动态探测注册 |
 
-一句话分界：**想知道「cs 系统里有什么规矩、有什么技能」用 `cs mcp serve`；
-想「出一张图、把 Markdown 排成 PDF、开个真浏览器、做开源质检、给文案去 AI 味」用 cs-mcp。**
+分工原则：**获取 CortexOS 规则、技能与系统上下文使用 `cs mcp serve`；调用图像生成、排版、浏览器与质检等外部能力使用 cs-mcp。**
 
-> 顺带一句：**Agent 侧其实不需要 MCP。** 能跑 Bash 的 Agent 直接调 `cs` CLI 就够，
-> 而且那是主干道（MCP 的通路管不到远端机器）。MCP 的价值只在**跑不了 Bash 的客户端**上。
-> 见 `cs rule` 里 `cmd/mcp.go` 的定位说明。
+> 说明：具备 Shell 执行权限的环境可直接运行 `cs` CLI；cs-mcp 主要为跑在 MCP 协议上的客户端提供标准化工具调用通道。
 
-## 🎯 为什么用它，而不是别的
+## 为什么使用 cs-mcp
 
-| 需求 | 逐个手搓命令 | 每个工具各接一遍 SDK | cs-mcp |
+| 需求 | 逐个手写命令 | 各工具单独集成 SDK | cs-mcp |
 |---|:---:|:---:|:---:|
-| 一个 Agent 里同时用出图 / 看图 / 门禁 / 排版 | ❌ 四套用法 | ❌ 接四遍协议 | ✅ 一个 server 全给 |
-| 换 Agent 就失效 | ❌ 命令绑定 | ⚠️ 各家 SDK 不同 | ✅ 换谁都认 MCP |
-| 没装的工具白占上下文 | — | ❌ 全量注册 | ✅ **探测式**：装了才注册 |
-| 大图 / 长文进上下文 | ❌ 手动处理 | ❌ 自己写 base64 | ✅ 一律走绝对路径 |
-| 加新能力 | 各自记命令 | ❌ 得改 MCP 代码 | ✅ 升级 CLI 就生效（MCP 只做串联） |
+| 统一调用多项 CLI 能力 | 需适配各命令参数 | 需适配各家协议 | 统一 MCP 接口 |
+| 跨客户端接入 | 命令与环境深度绑定 | 依赖特定 SDK 实现 | 标准 MCP 客户端通用 |
+| 避免未安装工具占用上下文 | — | 通常全量注册 | **探测式**：检测到 CLI 才注册 |
+| 本地文件与媒体交互 | 手工转换与解析 | 传输体积与编码开销 | 统一以绝对路径读写磁盘 |
+| 工具链扩展与升级 | 各自维护调用脚本 | 需频繁修改适配层 | 升级对应 CLI 即可生效 |
 
-**分层是硬的：能力在 CLI 里，MCP 只做串联。** 这个仓自己零实现 —— 每个工具都是对某个项目
-CLI 的一次薄封装。所以 CLI 一升级，MCP 这边立刻就有新能力；MCP 不重写任何逻辑，也就不存在
-「两边行为不一致」。
+**分层原则：能力在 CLI 中，MCP 仅负责标准化串联与发现。** 本仓库工具均为对应 CLI 的薄封装，不重复实现上游业务逻辑，保持与 CLI 行为严格一致。
 
-传输方式 stdio。文件以**绝对路径**传入，处理结果写回磁盘并返回路径 —— 不走 base64。
+传输方式为 stdio。文件以**绝对路径**传入，处理结果写回磁盘并返回路径，避免传输 base64 数据。
 
-## 🧩 能力分组（这张就是版图）
+## 能力分组
 
 | 分组 | 层次 | 开源项目 | 工具 | 干什么 | 前置 |
 |---|---|:---:|---:|---|---|
@@ -71,9 +70,8 @@ CLI 的一次薄封装。所以 CLI 一升级，MCP 这边立刻就有新能力�
 | `wechat` | 本机 Mac | [wx-cli](https://github.com/pandorafuture/wx-cli) | 6 | 微信会话、联系人、聊天消息、全文搜索；数据库留在这台 Mac | `wx-cli` + 本机微信数据库密钥 |
 | — | 自带 | 本 MCP | 1 | `groups_list`：列出全部分组、各自装什么、为什么没启用 | 无 |
 
-九组里**只有 `museav` 是在线服务**：要登录、要网络、有余额配额、会花钱；`wechat` 是这台 Mac 的本地微信数据读取能力（真实聊天内容属于私有数据）。其余七组是本地工具。
-这个差别在工具面上直接可读 —— **云能力那 17 个统一带 `museav_` 前缀**。owner 的口径就一句：
-**cs 是核心，museav 是云能力。**
+在各能力分组中，**`museav` 为在线云服务**（需登录与网络配额，对应工具统一带有 `museav_` 前缀）；`wechat` 为本地微信数据读取能力（仅限本机私有数据）；其余分组均为本地离线工具。
+分层定位：**cs 为系统核心，museav 为云能力扩展。**
 
 **默认策略是探测式**：某个分组的 CLI 在 `PATH` 上，它的工具才会注册。理由是工具 schema
 会随**每一次**模型请求发出去 —— 聚合 MCP 越串越多，不该让用户为「他机器上根本没装的工具」
