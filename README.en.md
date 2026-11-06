@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="#quickstart">Installation</a> ·
+  <a href="#-quickstart">Installation</a> ·
   <a href="#capability-groups">Capabilities</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="README.md">中文</a>
@@ -50,9 +50,9 @@ Distinction principle: **Use `cs mcp serve` for CortexOS rules, skills, and syst
 
 | Capability | Implementation | Benefit to Clients |
 |---|---|---|
-| **CLI Probing** | Tools register only when their respective CLI exists in `PATH` | Zero context token overhead for uninstalled tools |
-| **Standard stdio** | Single binary communicating via standard input/output | No background daemon or network port dependencies |
-| **Local Path I/O** | All file and media handling uses absolute disk paths | Output writes to disk and returns paths, avoiding base64 overhead |
+| **CLI Probing** | Default discovery registers tools for CLIs found in `PATH` | Uninstalled capability groups stay out of the tool list |
+| **Standard stdio** | Standard input/output connects the server and client | No extra listening port; individual tools may still require network access |
+| **Local Path I/O** | Local file tools accept absolute paths | Tools return file paths or resource URLs, reducing unnecessary inline base64 |
 
 Layering principle: Capabilities reside in CLIs; cs-mcp acts as a thin multiplexer over local CLI binaries.
 
@@ -71,7 +71,7 @@ Layering principle: Capabilities reside in CLIs; cs-mcp acts as a thin multiplex
 | `wechat` | local Mac | [wx-cli](https://github.com/pandorafuture/wx-cli) | 6 | Local WeChat sessions, contacts, messages and full-text search; database stays on this Mac | `wx-cli` + local WeChat database key |
 | — | built in | this MCP | 1 | `groups_list`: every group, what to install, why one is off | none |
 
-Among the capability groups, **`museav` is a cloud service** (requiring account login and network quota, with tools prefixed by `museav_`); `wechat` reads local WeChat data (restricted to private data on this machine); all other groups run offline local tools.
+Execution, network access, and account requirements differ by group: cloud calls in `museav` require an account and quota, `wechat` reads local data, `browser` needs network access to visit websites, and tools such as `scorecard` may contact external services. Running locally does not mean every operation works offline.
 Core principle: **cs is core, museav is cloud capability extension.**
 
 **The default strategy is probing**: a group's tools are registered only if its CLI is on `PATH`.
