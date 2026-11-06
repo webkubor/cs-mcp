@@ -8,9 +8,7 @@
 <h1 align="center">cs-mcp</h1>
 
 <p align="center">
-  <strong>Open-source toolchain gateway for CortexOS: discovers capabilities from installed local CLIs and exposes them over MCP.</strong><br>
-  Multiplexes CLI tools across open-source projects into capability groups.<br>
-  Tools register only when their respective CLI is installed, without consuming model context for uninstalled tools.
+  <strong>An open-source toolchain gateway that dynamically exposes installed local CLIs over MCP.</strong>
 </p>
 
 <p align="center">
@@ -21,12 +19,16 @@
 </p>
 
 <p align="center">
-  <a href="README.md">中文</a> · <a href="CHANGELOG.md">Changelog</a>
+  <a href="#quickstart">Installation</a> ·
+  <a href="#capability-groups">Capabilities</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="README.md">中文</a>
 </p>
 
 ---
 
-## Architectural Scope: Separation from `cs mcp serve`
+<details>
+<summary><strong>Architectural Scope: Separation from <code>cs mcp serve</code></strong> (click to expand)</summary>
 
 The system includes two components offering MCP channels, each with distinct responsibilities:
 
@@ -42,19 +44,17 @@ Distinction principle: **Use `cs mcp serve` for CortexOS rules, skills, and syst
 
 > Note: Environments with shell access can call the `cs` CLI directly; cs-mcp primarily serves MCP-compatible AI clients requiring a standard interface.
 
-## Why cs-mcp
+</details>
 
-| Need | Hand-rolled commands | SDK per tool | cs-mcp |
-|---|:---:|:---:|:---:|
-| Unified CLI capabilities | Fragmented command syntax | Multiple SDK protocols | Unified MCP interface |
-| Client interoperability | Tied to local shell environment | Vendor-specific SDK APIs | Standard MCP client compatibility |
-| Zero overhead for uninstalled tools | — | Often registered unconditionally | **Probing**: registered only when CLI is installed |
-| Local file and media handling | Manual conversion and parsing | Base64 serialization overhead | Native filesystem paths |
-| Toolchain maintenance | Ad-hoc invocation scripts | Frequent adapter updates | Upgrading the underlying CLI takes effect immediately |
+## Core Mechanism
 
-**Layering principle: Capabilities reside in CLIs; cs-mcp only handles standardization and multiplexing.** Every tool is a thin wrapper over its respective CLI, avoiding duplicated business logic and ensuring complete parity with upstream CLI behavior.
+| Capability | Implementation | Benefit to Clients |
+|---|---|---|
+| **CLI Probing** | Tools register only when their respective CLI exists in `PATH` | Zero context token overhead for uninstalled tools |
+| **Standard stdio** | Single binary communicating via standard input/output | No background daemon or network port dependencies |
+| **Local Path I/O** | All file and media handling uses absolute disk paths | Output writes to disk and returns paths, avoiding base64 overhead |
 
-Transport is stdio. Files are passed via **absolute paths**, and outputs are written back to disk and returned as paths, avoiding base64 encoding overhead for large files.
+Layering principle: Capabilities reside in CLIs; cs-mcp acts as a thin multiplexer over local CLI binaries.
 
 ## Capability Groups
 
